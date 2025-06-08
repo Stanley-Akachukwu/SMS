@@ -1,7 +1,6 @@
 ﻿@using SMS.Common.Dtos.Departments
 @using SMS.Common.Dtos.Roles
 @using SMS.Web.Services.Toasts
-@using SMS.Web.Services.Users
 @using System.Text.RegularExpressions
 @using System.Globalization
 @implements IDialogContentComponent<UserDto>
@@ -99,7 +98,6 @@
 
 @code {
     [Inject] ISmsCoreToastService _toastService { get; set; }
-    [Inject] private IUsersService _uersService { get; set; }
 
     [Parameter]
     public UserDto Content { get; set; } = default!;
@@ -121,10 +119,7 @@
     {
         RoleDtos = Content.Roles;
         departments = Content.Departments;
-        Content.SurName = "Test";
-        Content.FirstName = "Test";
-        Content.UserName = "Test@gmail.com";
-        Content.PhoneNumber = "9008777";
+       
         if (Content.Role != null)
         {
             this.selectedRoleId = Content?.Id!;

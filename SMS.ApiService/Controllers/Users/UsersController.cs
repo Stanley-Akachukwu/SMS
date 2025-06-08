@@ -23,7 +23,6 @@ namespace SMS.ApiService.Controllers.Users
             return Ok( await _repository.GetUserInfoByEmailAsync(email));
         }
 
-        //[Authorize]
         [HttpPost("user")]
         public async Task<ActionResult> CreateOrUpdateUserAsync([FromBody] UserDto userSetupDto, CancellationToken cancellationToken)
         {
@@ -31,16 +30,21 @@ namespace SMS.ApiService.Controllers.Users
         }
 
         [HttpGet("all")]
-        //[Authorize]
         public async Task<ActionResult> GetUsersAsync(CancellationToken cancellationToken)
         {
             return Ok(await _repository.GetUsersAsync(cancellationToken));
         }
         [HttpGet("departments")]
-        //[Authorize]
         public async Task<ActionResult> GetDepartmentsAsync(CancellationToken cancellationToken)
         {
             return Ok(await _repository.GetDepartmentsAsync(cancellationToken));
+        }
+
+        [Authorize]
+        [HttpPost("delete/{id}")]
+        public async Task<ActionResult> DeleteUserAsync(string id, CancellationToken cancellationToken)
+        {
+            return Ok(await _repository.DeleteUserAsync(id, cancellationToken));
         }
     }
 }

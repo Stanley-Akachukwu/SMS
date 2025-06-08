@@ -1,14 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
-using SMS.ApiService.Persistence;
+﻿using SMS.ApiService.Persistence;
 using SMS.Common.Dtos.Departments;
 using SMS.Common.Dtos.Users;
 using SMS.Common.Dtos;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SMS.ApiService.Repositories.Auths;
-using SMS.ApiService.Entities.Users;
-using SMS.ApiService.Entities.Roles;
-using Azure.Core;
 
 namespace SMS.ApiService.Repositories.Users
 {
@@ -17,6 +12,7 @@ namespace SMS.ApiService.Repositories.Users
 
         public async Task<ApiResponse<string>> CreateOrUpdateUserAsync(UserDto userDto, CancellationToken cancellationToken)
         {
+            
             try
             {
                 var user = await _dbContext.Users
@@ -71,13 +67,14 @@ namespace SMS.ApiService.Repositories.Users
         }
         public async Task<ApiResponse<IEnumerable<UserDto>>> GetUsersAsync(CancellationToken cancellationToken)
         {
+            
             try
             {
 
-                var usersWithRoles = await _dbContext.Users
+                var usersWithRoles = await _dbContext.Users.Where(u => !u.IsDeleted)
                                             .Include(u => u.Role)
                                             .Include(u => u.Department)
-                                            .Include(u => u.UserProfile)
+                                            //.Include(u => u.UserProfile)
                                             .Select(p => new UserDto
                                             {
                                                 DepartmentId = p.DepartmentId,
@@ -147,6 +144,20 @@ namespace SMS.ApiService.Repositories.Users
             return departments.Any()
                 ? ApiResponse<IEnumerable<DepartmentDto>>.Success(departments, StatusCodes.Status200OK)
                 : ApiResponse<IEnumerable<DepartmentDto>>.Failure("No departments found", StatusCodes.Status404NotFound);
+        }
+
+        public async Task<ApiResponse<string>> DeleteUserAsync(string id, CancellationToken cancellationToken)
+        {
+            //Soft delete user
+            var user = await _dbContext.Users
+                 .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            if (user!=null)
+            {
+                user.IsDeleted = true;
+                _dbContext.Users.Update(user);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            return ApiResponse<string>.Success("User deleted successfully", StatusCodes.Status200OK);
         }
     }
 }

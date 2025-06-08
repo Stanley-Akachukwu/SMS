@@ -16,9 +16,9 @@ namespace SMS.ApiService.Entities.Users
         [MaxLength(128)]
         public string? RoleId { get; set; }
         public Role? Role { get; set; }
-        [MaxLength(128)]
-        public string? UserProfileId { get; set; }
-        public UserProfile UserProfile { get; set; } = new UserProfile();
+        //[MaxLength(128)]
+        //public string? UserProfileId { get; set; }
+        //public UserProfile UserProfile { get; set; } = new UserProfile();
 
         [MaxLength(150)]
         public int? DepartmentId { get; set; }

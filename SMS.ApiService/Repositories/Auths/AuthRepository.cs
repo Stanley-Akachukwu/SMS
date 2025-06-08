@@ -70,7 +70,7 @@ namespace SMS.ApiService.Repositories.Auths
             user.SurName = request?.SurName;
             user.DateUpdated = DateTime.UtcNow;
             user.UpdatedByUserId = "System";
-
+            //user.UserProfileId = Ulid.NewUlid().ToString();
 
             context.Users.Add(user);
             await context.SaveChangesAsync();

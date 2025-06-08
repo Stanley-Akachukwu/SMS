@@ -10,5 +10,6 @@ namespace SMS.ApiService.Repositories.Users
         Task<ApiResponse<string>> CreateOrUpdateUserAsync(UserDto user, CancellationToken cancellationToken);
         Task<ApiResponse<IEnumerable<UserDto>>> GetUsersAsync(CancellationToken cancellationToken);
         Task<ApiResponse<IEnumerable<DepartmentDto>>?> GetDepartmentsAsync(CancellationToken cancellationToken);
+        Task<ApiResponse<string>> DeleteUserAsync(string id, CancellationToken cancellationToken);
     }
 }

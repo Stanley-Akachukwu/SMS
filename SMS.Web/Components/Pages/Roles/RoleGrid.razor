@@ -2,7 +2,6 @@
 @using SMS.Common.Dtos.Roles
 @using SMS.Common.Enums
 @using SMS.Web.Components.Shared
-@using SMS.Web.Services.Roles
 @using SMS.Web.Services.Toasts
 
 
@@ -63,7 +62,6 @@
 @code {
     [Inject] private IJSRuntime _jSRuntime { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-    [Inject] private IRolePermissionsService _rolePermissionService { get; set; }
     [Inject] IDialogService _dialogService { get; set; }
     [Inject] ISmsCoreToastService _toastService { get; set; }
     [Inject] private SMSApiClient SMSApiClient { get; set; }
@@ -103,7 +101,7 @@
         if (rsp?.IsSuccess == true && rsp.Data != null)
         {
             roles = rsp.Data.AsQueryable();
-             
+            roles = roles?.Where(r => r.Name != "System");
         }
         else
         {
@@ -115,7 +113,7 @@
     {
         // using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         //var permissionResult = await _rolePermissionService.GetRolePermissionsAsync(id, cts.Token);
-        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<RolePermissionDto>>>($"/api/roles/all", null);
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<RolePermissionDto>>>($"/api/roles/permissions/{id}", null);
         if (rsp?.IsSuccess == true && rsp.Data != null)
         {
             permissions = rsp.Data.AsQueryable();
@@ -176,7 +174,7 @@
             "Delete role?");
         DialogResult result = await dialog.Result;
 
-        // If cancelled, return
+        // If cancelled, return 
         if (result.Cancelled)
         {
             return;
@@ -184,7 +182,8 @@
 
         try
         {
-            await _rolePermissionService.DeleteRoleAsync(role?.Id, CancellationToken.None);
+            var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"roles/delete", role?.Id);
+            // await _rolePermissionService.DeleteRoleAsync(role?.Id, CancellationToken.None);
             await LoadData();
         }
         catch (Exception exc)
@@ -197,7 +196,7 @@
     
     private async Task HandleEditRoleDialogResult(DialogResult result, RoleDto role)
     {
-        // If cancelled, return
+        // If cancelled, return  Roles/create
         if (result.Cancelled)
         {
             return;
@@ -208,8 +207,8 @@
 
         role.CreatedById = Ulid.NewUlid().ToString();
         role.RoleDtos = new List<RoleDto>();
-        var rsp = await _rolePermissionService.CreateOrUpdateRoleAsync(role, CancellationToken.None);
-
+        // var rsp = await _rolePermissionService.CreateOrUpdateRoleAsync(role, CancellationToken.None);
+        var rsp = await SMSApiClient.PostAsync<ApiResponse<string>, RoleDto>("/api/Roles/create", role);
         if (rsp?.IsSuccess == true && result.Data != null)
         {
             loading = false;

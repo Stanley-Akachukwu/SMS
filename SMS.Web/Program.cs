@@ -4,10 +4,7 @@ using Microsoft.FluentUI.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using SMS.Web.Authentication;
 using SMS.Web.Services;
-using SMS.Web.Services.Dashboards;
-using SMS.Web.Services.Roles;
 using SMS.Web.Services.Toasts;
-using SMS.Web.Services.Users;
 using SMS.Common.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,21 +22,13 @@ builder.Services.AddFluentUIComponents();
 builder.Services.AddServerSideBlazor()
     .AddCircuitOptions(options => { options.DetailedErrors = true; });
 
-builder.Services.AddHttpClient<WeatherApiClient>(client =>
-    {
-        client.BaseAddress = new("https+http://apiservice");
-    });
-
 
 builder.Services.AddAuthenticationCore();
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddOutputCache();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<IRolePermissionsService, RolePermissionsService>();
 builder.Services.AddScoped<ISmsCoreToastService, SmsCoreToastService>();
-builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddSingleton<IPermissionService, PermissionService>();
 
 builder.Services.AddHttpClient<SMSApiClient>(client =>

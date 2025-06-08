@@ -1,21 +1,4 @@
-﻿@* <div class="navmenu">
-    <input type="checkbox" title="Menu expand/collapse toggle" id="navmenu-toggle" class="navmenu-icon" />
-    <label for="navmenu-toggle" class="navmenu-icon"><FluentIcon Value="@(new Icons.Regular.Size20.Navigation())" Color="Color.Fill" /></label>
-    <nav class="sitenav" aria-labelledby="main-menu">
-        <FluentNavMenu Id="main-menu" Collapsible="true" Width="250" Title="Navigation menu" @bind-Expanded="expanded" CustomToggle="true">
-            <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())" IconColor="Color.Accent">Dashboard</FluentNavLink>
-            <FluentNavLink Href="counter" Icon="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconColor="Color.Accent">Counter</FluentNavLink>
-            <FluentNavLink Href="weather" Icon="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconColor="Color.Accent">Weather</FluentNavLink>
-        </FluentNavMenu>
-    </nav>
-</div>
-
-@code {
-    private bool expanded = true;
-}
- *@
-
-@using System.Collections.Generic
+﻿@using System.Collections.Generic
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @using SMS.Common.Dtos.Menus
@@ -174,18 +157,6 @@
                 new MenuItemDto { Title = "Extracurricular Activities", Href = "activities", Icon = new Icons.Regular.Size20.Star() },
                 new MenuItemDto { Title = "Student Clubs Management", Href = "clubs", Icon = new Icons.Regular.Size20.PeopleTeam() },
                 new MenuItemDto { Title = "Counseling Sessions", Href = "counseling", Icon = new Icons.Regular.Size20.PersonSupport() }
-            }
-        },
-        new MenuGroupDto
-        {
-            Section = MenuSection.None,
-            DisplayTitle = "Default Pages",
-            Tooltip = "Default Pages",
-            Icon = new Icons.Color.Size16.Org(),
-              Items = new List<MenuItemDto>
-            {
-                new MenuItemDto { Title = "Counter", Href = "counter", Icon = new Icons.Regular.Size20.NumberSymbolSquare(), IconColor =Color.Accent },
-                new MenuItemDto { Title = "Weather", Href = "weather", Icon = new Icons.Regular.Size20.WeatherPartlyCloudyDay(), IconColor = Color.Accent }
             }
         },
         new MenuGroupDto

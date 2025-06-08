@@ -163,7 +163,7 @@ namespace SMS.ApiService.Repositories.Roles
             try
             {
                 var systemPermissions = await _dbContext.RolePermissions
-                    .Where(p => p.RoleId == "System")
+                    .Where(p => p.RoleId == "01JX3BYWMF1AWD900K93VEFC6A")
                     .ToListAsync(cancellationToken);
 
                 var rolePermissions = await _dbContext.RolePermissions

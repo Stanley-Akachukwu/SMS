@@ -1,7 +1,6 @@
 ﻿@page "/dashboard"
 @using SMS.Common.Dtos.Dashboards
 @using SMS.Web.Components.Shared
-@using SMS.Web.Services.Dashboards
 @using System.Security.Claims
 
 <PageTitle>Dashboard</PageTitle>
@@ -44,7 +43,6 @@
 </FluentStack>  
 
 @code {
-    [Inject] private IDashboardService _dashboardService { get; set; }
     [Inject] private SMSApiClient SMSApiClient { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
     [CascadingParameter]

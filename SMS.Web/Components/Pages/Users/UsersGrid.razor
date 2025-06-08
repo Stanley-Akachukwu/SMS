@@ -3,9 +3,8 @@
 @using SMS.Common.Dtos.Departments
 @using SMS.Common.Dtos.Roles
 @using SMS.Common.Enums
-@using SMS.Web.Services.Roles
+@using SMS.Web.Components.Shared
 @using SMS.Web.Services.Toasts
-@using SMS.Web.Services.Users
 
 @using static Microsoft.FluentUI.AspNetCore.Components.Icons.Filled.Size12
 
@@ -38,11 +37,11 @@
                             RowSize="@rowSize"
                             AutoItemsPerPage="true"
                             Style="overflow-y:hidden;">
-                                <PropertyColumn Property="@(c => c.FirstName)" Sortable="true" />
-                                <PropertyColumn Property="@(c => c.SurName)" Sortable="true" />
-                                <PropertyColumn Property="@(c => c.UserName)" Sortable="true" />
-                                <PropertyColumn Property="@(c => c.Role.Name)" Sortable="true" />
-                                <PropertyColumn Property="@(c => c.Department.Name)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.FirstName!)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.SurName!)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.UserName!)" Sortable="true" />
+                                @* <PropertyColumn Property="@(c => c.Role.Name!)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.Department.Name!)" Sortable="true" /> *@
 
                                 <TemplateColumn Title="Actions">
                                     <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditUser(context))" />
@@ -69,10 +68,10 @@
 @code {
     [Inject] private IJSRuntime _jSRuntime { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-    [Inject] private IRolePermissionsService _rolePermissionService { get; set; }
-    [Inject] private IUsersService _uersService { get; set; }
+   
     [Inject] ISmsCoreToastService _toastService { get; set; }
     [Inject] IDialogService _dialogService { get; set; }
+    [Inject] private SMSApiClient SMSApiClient { get; set; }
 
     [CascadingParameter]
     public Task<AuthenticationState> AuthState { get; set; }
@@ -111,24 +110,28 @@
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         loading = true;
 
-        var usersResult = await _uersService.GetUsersAsync(cts.Token);
-        users = usersResult.Data.AsQueryable();
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<UserDto>>>($"/api/users/all", null);
+        // var usersResult = await _uersService.GetUsersAsync(cts.Token);
+        users = rsp?.Data?.AsQueryable();
         loading = false;
     }
     private async Task LoadRoles(string? id = "all")
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        var rolesResult = await _rolePermissionService.GetRolesAsync(cts.Token);
-        if (rolesResult?.IsSuccess == true && rolesResult.Data != null)
+        // var rolesResult = await _rolePermissionService.GetRolesAsync(cts.Token);
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<RoleDto>>>($"/api/roles/all", null);
+        if (rsp?.IsSuccess == true && rsp.Data != null)
         {
-            roles = rolesResult.Data.AsQueryable();
+            roles = rsp.Data.AsQueryable();
+            roles = roles?.Where(r => r.Name != "System");
         }
     }
     public async Task GetDepartments()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        var deptResult = await _uersService.GetDepartmentsAsync(cts.Token);
-        departments = deptResult.Data.ToList();
+        // var deptResult = await _uersService.GetDepartmentsAsync(cts.Token);
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<DepartmentDto>>>($"/api/users/departments", null);
+        departments = rsp?.Data?.ToList();
     }
     private async Task AddNewUser()
     {
@@ -182,22 +185,23 @@
             "Delete user?");
         DialogResult result = await dialog.Result;
 
-        // // If cancelled, return
-        // if (result.Cancelled)
-        // {
-        //     return;
-        // }
+        // If cancelled, return
+        if (result.Cancelled)
+        {
+            return;
+        }
 
-        // try
-        // {
-        //     await _uersService.de(role?.Id, CancellationToken.None);
-        //     await LoadData();
-        // }
-        // catch (Exception exc)
-        // {
-        //     string errorMessage = exc.InnerException?.Message ?? exc.Message;
-        //     await _dialogService.ShowErrorAsync("Error", errorMessage);
-        // }
+        try
+        {
+            var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"roles/delete", user?.Id);
+
+            await LoadData();
+        }
+        catch (Exception exc)
+        {
+            string errorMessage = exc.InnerException?.Message ?? exc.Message;
+            await _dialogService.ShowErrorAsync("Error", errorMessage);
+        }
     }
    
 
@@ -216,7 +220,8 @@
         user.Roles = new List<RoleDto>();
         user.Departments = new List<DepartmentDto>();
 
-        var rsp = await _uersService.CreateOrUpdateUserAsync(user, CancellationToken.None);
+        // var rsp = await _uersService.CreateOrUpdateUserAsync(user, CancellationToken.None);
+        var rsp = await SMSApiClient.PostAsync<ApiResponse<string>, UserDto>("/api/users/user", user);
 
         if (rsp?.IsSuccess == true && result.Data != null && rsp?.StatusCode != StatusCodes.Status500InternalServerError)
         {
