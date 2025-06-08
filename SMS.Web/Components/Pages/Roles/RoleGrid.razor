@@ -1,0 +1,227 @@
+﻿@page "/roles"
+@using SMS.Common.Dtos.Roles
+@using SMS.Common.Enums
+@using SMS.Web.Components.Shared
+@using SMS.Web.Services.Roles
+@using SMS.Web.Services.Toasts
+
+
+
+
+<FluentLayout Style="margin-top: 10px;margin-bottom: 1px;">
+    @if (!loading && ShowHeader)
+    {
+        <FluentHeader>
+            <h3>Roles</h3>
+            <FluentSpacer />
+            <FluentButton IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@(() => AddNewRole())">Add</FluentButton>
+        </FluentHeader>
+    }
+
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+
+        @if (ShowBodyContent)
+        {
+            <FluentBodyContent>
+                @if (loading)
+                {
+                    <Progress />
+                }
+                else if (roles != null)
+                {
+                    <div id="datagrid-container">
+                        <FluentStack Orientation="Orientation.Vertical" Width="100%">
+                            <FluentDataGrid Items="roles!.AsQueryable()"
+                            Pagination="@pagination"
+                            RowSize="@rowSize"
+                            AutoItemsPerPage="true"
+                            Style="overflow-y:hidden;">
+                                <PropertyColumn Property="@(c => c.Name)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.UserRoleType)" Sortable="true" />
+                                <TemplateColumn Title="Actions">
+                                    <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditRole(context))" />
+                                    <FluentButton IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteRole(context))" />
+                                </TemplateColumn>
+                            </FluentDataGrid>
+                            <FluentPaginator State="@pagination" />
+                        </FluentStack>
+                    </div>
+                }
+            </FluentBodyContent>
+        }
+    </FluentStack>
+    @if (ShowFooter)
+    {
+        <FluentFooter Style="@("height: 40px; color: black; text-align: center;")">
+            Footer
+        </FluentFooter>
+    }
+
+</FluentLayout>
+
+
+@code {
+    [Inject] private IJSRuntime _jSRuntime { get; set; }
+    [Inject] private NavigationManager _navigation { get; set; }
+    [Inject] private IRolePermissionsService _rolePermissionService { get; set; }
+    [Inject] IDialogService _dialogService { get; set; }
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+    [Inject] private SMSApiClient SMSApiClient { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthState { get; set; }
+    DataGridRowSize rowSize = DataGridRowSize.Small;
+    IQueryable<RoleDto>? roles;
+    IEnumerable<RolePermissionDto> permissions;
+   
+    PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
+    bool loading = false;
+    bool ShowHeader = true;
+    bool ShowNavMenu = true;
+    bool ShowBodyContent = true;
+    bool ShowFooter = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+
+            var loadDataTask = LoadData();
+            var getPermissionsTask = GetPermissions();
+
+            await Task.WhenAll(loadDataTask, getPermissionsTask);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    private async Task LoadData()
+    {
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<RoleDto>>>($"/api/roles/all",null);
+
+        if (rsp?.IsSuccess == true && rsp.Data != null)
+        {
+            roles = rsp.Data.AsQueryable();
+             
+        }
+        else
+        {
+             
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+    }
+    private async Task GetPermissions(string? id="all")
+    {
+        // using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        //var permissionResult = await _rolePermissionService.GetRolePermissionsAsync(id, cts.Token);
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<RolePermissionDto>>>($"/api/roles/all", null);
+        if (rsp?.IsSuccess == true && rsp.Data != null)
+        {
+            permissions = rsp.Data.AsQueryable();
+             
+        }
+    }
+
+    private async Task AddNewRole()
+    {
+        var role = new RoleDto();
+        role.RolePermissions = permissions.ToList();
+        role.RoleDtos = roles.ToList();
+        role.Action = SMSCoreAction.Create;
+        DialogParameters<RoleDto> parameters = new()
+            {
+                Title = $"Create Role",
+                Alignment = HorizontalAlignment.Right,
+                PreventDismissOnOverlayClick = true,
+                PreventScroll = true
+            };
+        var dialog = await _dialogService.ShowPanelAsync<EditRolePanel>(role, parameters);
+        var dialogResult = await dialog.Result;
+        await HandleEditRoleDialogResult(dialogResult, role);
+    }
+    private async Task EditRole(RoleDto role)
+    {
+        await GetPermissions(role.Id);
+        var existingPermissions = permissions.Where(p => p.RoleId == role.Id).ToList();
+        role.RolePermissions = permissions.ToList();
+        role.RoleDtos = roles.ToList();
+        role.Action = SMSCoreAction.Edit;
+        role.PermissionIds = existingPermissions.Select(p => p.PermissionId).ToList();
+       
+        DialogParameters<RoleDto> parameters = new()
+            {
+                Title = $"Edit Role",
+                Alignment = HorizontalAlignment.Right,
+                PreventDismissOnOverlayClick = true,
+                PreventScroll = true
+            };
+        var dialog = await _dialogService.ShowPanelAsync<EditRolePanel>(role, parameters);
+        var dialogResult = await dialog.Result;
+        await HandleEditRoleDialogResult(dialogResult, role);
+    }
+    private async Task DeleteRole(RoleDto role)
+    {
+        // Check if the item is null
+        if (role is null)
+        {
+            return;
+        }
+
+        // Create and show a dialog to confirm the delete
+        IDialogReference dialog = await _dialogService.ShowConfirmationAsync(
+            $"Are you sure you want to delete the role '{role.Name}'?",
+            "Yes",
+            "No",
+            "Delete role?");
+        DialogResult result = await dialog.Result;
+
+        // If cancelled, return
+        if (result.Cancelled)
+        {
+            return;
+        }
+
+        try
+        {
+            await _rolePermissionService.DeleteRoleAsync(role?.Id, CancellationToken.None);
+            await LoadData();
+        }
+        catch (Exception exc)
+        {
+            string errorMessage = exc.InnerException?.Message ?? exc.Message;
+            await _dialogService.ShowErrorAsync("Error", errorMessage);
+        }
+    }
+    
+    
+    private async Task HandleEditRoleDialogResult(DialogResult result, RoleDto role)
+    {
+        // If cancelled, return
+        if (result.Cancelled)
+        {
+            return;
+        }
+
+
+        loading = true;
+
+        role.CreatedById = Ulid.NewUlid().ToString();
+        role.RoleDtos = new List<RoleDto>();
+        var rsp = await _rolePermissionService.CreateOrUpdateRoleAsync(role, CancellationToken.None);
+
+        if (rsp?.IsSuccess == true && result.Data != null)
+        {
+            loading = false;
+            _toastService.ShowToastMessage("Role Creation", "Submitted successfully!", Color.Success, ToastIntent.Success);
+        }
+        else
+        {
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        } 
+
+        await LoadData();
+        await GetPermissions();
+    }
+   
+}

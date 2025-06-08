@@ -1,0 +1,82 @@
+﻿@page "/login"
+@* @page "/login/{returnUrl}" *@
+
+@layout EmptyLayout
+
+@rendermode InteractiveServer
+@attribute [OutputCache(Duration = 5)]
+
+
+<FluentCard Width="400px" Height="400px">
+    <FluentHeader Class="card-header" style="margin-bottom: 16px;">
+        Sign In to SMS Core
+        <FluentSpacer />
+        <FluentNavLink Href="admission-enrollment" Icon="@(new Icons.Regular.Size20.PersonAdd())" IconColor="Color.Accent"></FluentNavLink>
+    </FluentHeader>
+    <FluentEditForm Model="@UserLogin" OnValidSubmit="HandleLogin" FormName="LoginForm" style="margin-top: 24px;">
+        <h4>Email</h4>
+        <FluentTextField @bind-Value="UserLogin.UserName" TextFieldType="TextFieldType.Email" Spellcheck="true" style="width: 100%;" Placeholder="email" />
+        <h4>Password</h4>
+        <FluentTextField @bind-Value="UserLogin.Password" TextFieldType="TextFieldType.Password" style="width: 100%; margin-bottom: 16px;" Placeholder="password" />
+        <FluentDivider Orientation="Orientation.Horizontal" /> <br />
+        <FluentStack HorizontalAlignment="HorizontalAlignment.Center">
+            <FluentButton Type="ButtonType.Submit" style="width: 80%;" Appearance="Appearance.Accent" Loading="@loading">
+                Login
+            </FluentButton>
+            @if (authMessage != null && authMessage.Length > 0)
+            {
+                <FluentMessageBar Title="Authentication Error" Intent="@MessageIntent.Error">
+                    @authMessage
+                </FluentMessageBar>
+            }
+        </FluentStack>
+    </FluentEditForm>
+</FluentCard>
+
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject SMSApiClient SMSApiClient
+@code {
+    private UserDto UserLogin = new UserDto();
+    bool loading = false;
+    bool succeededLogin = false;
+    public string authMessage { get; set; }
+    private TokenResponseDto? _pendingAuthModel;
+    // [Parameter]
+    // public string returnUrl { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (string.IsNullOrEmpty(returnUrl))
+        //     returnUrl = "/";
+
+        UserLogin.UserName = "stanley.c.akachukwu@yopmail.com";
+        UserLogin.Password = "Password123!";
+    }
+  
+    private async Task HandleLogin()
+    {
+        loading = true;
+        var rsp = await SMSApiClient.PostAsync<ApiResponse<TokenResponseDto?>, UserDto>("/api/auth/login", UserLogin);
+        if (rsp != null && rsp?.Data?.AccessToken != null)
+        {
+            await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(rsp.Data);
+            loading = false;
+            Navigation.NavigateTo("/dashboard");
+        }
+        else
+        {
+            loading = false;
+            authMessage = rsp?.ErrorMessage ?? "An error occurred while trying to login. Please try again.";
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            StateHasChanged();
+        }
+    }
+}

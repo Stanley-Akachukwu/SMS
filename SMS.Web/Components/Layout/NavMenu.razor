@@ -1,0 +1,434 @@
+﻿@* <div class="navmenu">
+    <input type="checkbox" title="Menu expand/collapse toggle" id="navmenu-toggle" class="navmenu-icon" />
+    <label for="navmenu-toggle" class="navmenu-icon"><FluentIcon Value="@(new Icons.Regular.Size20.Navigation())" Color="Color.Fill" /></label>
+    <nav class="sitenav" aria-labelledby="main-menu">
+        <FluentNavMenu Id="main-menu" Collapsible="true" Width="250" Title="Navigation menu" @bind-Expanded="expanded" CustomToggle="true">
+            <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())" IconColor="Color.Accent">Dashboard</FluentNavLink>
+            <FluentNavLink Href="counter" Icon="@(new Icons.Regular.Size20.NumberSymbolSquare())" IconColor="Color.Accent">Counter</FluentNavLink>
+            <FluentNavLink Href="weather" Icon="@(new Icons.Regular.Size20.WeatherPartlyCloudyDay())" IconColor="Color.Accent">Weather</FluentNavLink>
+        </FluentNavMenu>
+    </nav>
+</div>
+
+@code {
+    private bool expanded = true;
+}
+ *@
+
+@using System.Collections.Generic
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Web
+@using SMS.Common.Dtos.Menus
+@using SMS.Common.Enums
+<div class="navmenu">
+    <input type="checkbox" id="navmenu-toggle" class="navmenu-icon" />
+    <label for="navmenu-toggle" class="navmenu-icon">
+        <FluentIcon Value="@(new Icons.Regular.Size20.Navigation())" Color="Color.Fill" />
+    </label>
+
+    <nav class="sitenav" aria-labelledby="main-menu">
+        <FluentNavMenu Id="main-menu" Collapsible="true" Width="250" Title="Navigation menu" @bind-Expanded="expanded" CustomToggle="true">
+            <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())" IconColor="Color.Accent">Dashboard</FluentNavLink>
+            <AuthorizeView>
+                <Authorized>
+                    @foreach (var group in MenuGroups)
+                    {
+                        if (group.Section == MenuSection.Home)
+                        {
+                            foreach (var item in group.Items)
+                            {
+                                <FluentNavLink Href="@item.Href" Match="NavLinkMatch.All" Icon="@item.Icon" IconColor="@item.IconColor">@item.Title</FluentNavLink>
+                            }
+                        }
+                        else
+                        {
+                            <FluentNavGroup Title="@group.DisplayTitle" Tooltip="@group.Tooltip" Icon="@group.Icon">
+                                @foreach (var item in group.Items)
+                                {
+                                    <FluentNavLink Href="@item.Href" Icon="@item.Icon" IconColor="@item.IconColor">@item.Title</FluentNavLink>
+                                }
+                            </FluentNavGroup>
+                        }
+                    }
+                </Authorized>
+                <NotAuthorized>
+                    <p>You need to sign in.</p>
+                </NotAuthorized>
+            </AuthorizeView>
+        </FluentNavMenu>
+    </nav>
+</div>
+
+@code {
+    private bool expanded = true;
+    List<MenuGroupDto> MenuGroups { get; set; } = new List<MenuGroupDto>();
+    protected override async Task OnInitializedAsync()
+    {
+        MenuGroups = GetMenuGroups();
+    }
+    public List<MenuGroupDto> GetMenuGroups()
+    {
+        return new List<MenuGroupDto>
+        {
+        // new MenuGroupDto
+        // {
+        //     Section = MenuSection.Home,
+        //     DisplayTitle = "Home",
+        //     Icon = new Icons.Regular.Size20.Home(),
+        //     Items = new List<MenuItemDto>
+        //     {
+        //         new MenuItemDto { Title = "Home", Href = "/", Icon = new Icons.Regular.Size20.Home(), IconColor = Color.Accent }
+        //     }
+        // },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Administration,
+            DisplayTitle = "Administration",
+            Tooltip = "Administration",
+            Icon = new Icons.Color.Size16.Org(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Admission and Enrollment",
+                    Href = "admission-enrollment",
+                    Icon = new Icons.Regular.Size20.PersonAdd(),
+                    IconColor = Color.Neutral
+                },
+                new MenuItemDto
+                {
+                    Title = "Staff Recruitment",
+                    Href = "staff-recruitment",
+                    Icon = new Icons.Regular.Size20.PeopleAdd(),
+                    IconColor = Color.Warning
+                },
+                new MenuItemDto
+                {
+                    Title = "School Calendar and Event",
+                    Href = "school-calendar",
+                    Icon = new Icons.Regular.Size20.CalendarLtr(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Document Management",
+                    Href = "documents",
+                    Icon = new Icons.Regular.Size20.Folder(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "ID Cards and Badge",
+                    Href = "id-cards",
+                    Icon = new Icons.Regular.Size20.Badge(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Visitor and Security",
+                    Href = "visitor-security",
+                    Icon = new Icons.Regular.Size20.ShieldPerson(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Academic,
+            DisplayTitle = "Academic",
+            Tooltip = "Academic Department",
+            Icon = new Icons.Color.Size16.Book(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto { Title = "Course and Curriculum Management", Href = "course-curriculum", Icon = new Icons.Regular.Size20.BookOpen() },
+                new MenuItemDto { Title = "Timetable Scheduling", Href = "timetable", Icon = new Icons.Regular.Size20.CalendarAgenda() },
+                new MenuItemDto { Title = "Exam Scheduling", Href = "exam-schedule", Icon = new Icons.Regular.Size20.Calendar() },
+                new MenuItemDto { Title = "Grading and Report Cards", Href = "grading", Icon = new Icons.Regular.Size20.ClipboardTaskListLtr() },
+                new MenuItemDto { Title = "Academic Calendar", Href = "calendar", Icon = new Icons.Regular.Size20.CalendarLtr() }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Finance,
+            DisplayTitle = "Finance",
+            Tooltip = "Finance Department",
+            Icon = new Icons.Color.Size16.Savings(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto { Title = "Fee Setup and Management", Href = "fee-management", Icon = new Icons.Regular.Size20.MoneyHand() },
+                new MenuItemDto { Title = "Invoice Generation and Tracking", Href = "invoicing", Icon = new Icons.Regular.Size20.ReceiptMoney() },
+                new MenuItemDto { Title = "Payment Gateway Integration", Href = "payment-gateway", Icon = new Icons.Regular.Size20.Link() },
+                new MenuItemDto { Title = "Financial Reporting", Href = "financial-reporting", Icon = new Icons.Regular.Size20.Table() },
+                new MenuItemDto { Title = "Student Wallets", Href = "student-wallet", Icon = new Icons.Regular.Size20.Wallet() }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.StudentAffairs,
+            DisplayTitle = "Student Affairs",
+            Tooltip = "Student Affairs Management",
+            Icon = new Icons.Color.Size16.People(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto { Title = "Student Discipline Tracking", Href = "discipline", Icon = new Icons.Regular.Size20.PersonFeedback() },
+                new MenuItemDto { Title = "Extracurricular Activities", Href = "activities", Icon = new Icons.Regular.Size20.Star() },
+                new MenuItemDto { Title = "Student Clubs Management", Href = "clubs", Icon = new Icons.Regular.Size20.PeopleTeam() },
+                new MenuItemDto { Title = "Counseling Sessions", Href = "counseling", Icon = new Icons.Regular.Size20.PersonSupport() }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.None,
+            DisplayTitle = "Default Pages",
+            Tooltip = "Default Pages",
+            Icon = new Icons.Color.Size16.Org(),
+              Items = new List<MenuItemDto>
+            {
+                new MenuItemDto { Title = "Counter", Href = "counter", Icon = new Icons.Regular.Size20.NumberSymbolSquare(), IconColor =Color.Accent },
+                new MenuItemDto { Title = "Weather", Href = "weather", Icon = new Icons.Regular.Size20.WeatherPartlyCloudyDay(), IconColor = Color.Accent }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Communication,
+            DisplayTitle = "Communication",
+            Tooltip = "Communication Department",
+            Icon = new Icons.Color.Size16.Comment(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Internal Messaging",
+                    Href = "messaging",
+                    Icon = new Icons.Regular.Size20.Chat(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Notifications",
+                    Href = "notifications",
+                    Icon = new Icons.Regular.Size20.AlertUrgent(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Parent Portal & App",
+                    Href = "parent-portal",
+                    Icon = new Icons.Regular.Size20.PhoneTablet(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Surveys and Feedback",
+                    Href = "feedback",
+                    Icon = new Icons.Regular.Size20.ChatHelp(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.HumanResources,
+            DisplayTitle = "Human Resources",
+            Tooltip = "HR Department",
+            Icon = new Icons.Color.Size16.PeopleTeam(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Staff Profiles and Records",
+                    Href = "staff-profiles",
+                    Icon = new Icons.Regular.Size20.PersonBoard(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Leave and Attendance",
+                    Href = "attendance-leave",
+                    Icon = new Icons.Regular.Size20.CalendarClock(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Staff Appraisal",
+                    Href = "staff-appraisal",
+                    Icon = new Icons.Regular.Size20.ClipboardBulletListLtr(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Training & Development",
+                    Href = "training-development",
+                    Icon = new Icons.Regular.Size20.BookPulse(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Transport,
+            DisplayTitle = "Transport",
+            Tooltip = "Transport Department",
+            Icon = new Icons.Color.Size16.LocationRipple(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Bus Routes",
+                    Href = "bus-routes",
+                    Icon = new Icons.Regular.Size20.Map(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Vehicle Tracking",
+                    Href = "vehicle-tracking",
+                    Icon = new Icons.Regular.Size20.Location(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Driver Assignments",
+                    Href = "driver-assignments",
+                    Icon = new Icons.Regular.Size20.Person(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Pick-up & Drop-off",
+                    Href = "pickup-dropoff",
+                    Icon = new Icons.Regular.Size20.CalendarClock(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Hostel,
+            DisplayTitle = "Hostel",
+            Tooltip = "Hostel & Boarding Management",
+            Icon = new Icons.Color.Size16.Home(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Room Allocation",
+                    Href = "room-allocation",
+                    Icon = new Icons.Regular.Size20.Bed(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Meal Planning",
+                    Href = "meal-planning",
+                    Icon = new Icons.Regular.Size20.Food(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Attendance & Curfew",
+                    Href = "hostel-attendance",
+                    Icon = new Icons.Regular.Size20.CheckboxChecked(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Hostel Fees",
+                    Href = "hostel-fees",
+                    Icon = new Icons.Regular.Size20.MoneyCalculator(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Security,
+            DisplayTitle = "Security",
+            Tooltip = "Security Administration",
+            Icon = new Icons.Color.Size16.LockClosed(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Roles & Permissions",
+                    Href = "roles",
+                    Icon = new Icons.Regular.Size20.ShieldLock(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Users",
+                    Href = "users",
+                    Icon = new Icons.Regular.Size20.PersonLock(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.ITSupport,
+            DisplayTitle = "IT & Support",
+            Tooltip = "IT and Support Department",
+            Icon = new Icons.Color.Size16.Apps(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Backup & Recovery",
+                    Href = "backup-recovery",
+                    Icon = new Icons.Regular.Size20.ArrowDownload(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Helpdesk",
+                    Href = "helpdesk",
+                    Icon = new Icons.Regular.Size20.QuestionCircle(),
+                    IconColor = Color.Accent
+                }
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Alumni,
+            DisplayTitle = "Alumni",
+            Tooltip = "Alumni & Community Relations",
+            Icon = new Icons.Color.Size16.BuildingPeople(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Alumni Database",
+                    Href = "alumni-database",
+                    Icon = new Icons.Regular.Size20.ContactCard(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Alumni Events",
+                    Href = "alumni-events",
+                    Icon = new Icons.Regular.Size20.Calendar3Day(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Donations & Fundraising",
+                    Href = "fundraising",
+                    Icon = new Icons.Regular.Size20.Gift(),
+                    IconColor = Color.Accent
+                }
+            }
+        }
+        };
+    }
+}
+
+
+
+
+
+
+
+
+
+

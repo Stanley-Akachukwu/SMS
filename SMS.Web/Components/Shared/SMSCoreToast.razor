@@ -1,0 +1,14 @@
+﻿@using SMS.Web.Models
+@implements IToastContentComponent<ToastData>
+
+<div style="width: 100%" class="@(Content.ToastPosition)">
+    <h5>@Content.ToastParam</h5>
+</div>
+
+@code {
+    [CascadingParameter]
+    private FluentToast Toast { get; set; } = default!;
+
+    [Parameter]
+    public ToastData Content { get; set; } = default!;
+}

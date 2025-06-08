@@ -1,0 +1,82 @@
+﻿@using SMS.Web.Components.Shared
+@inherits LayoutComponentBase
+
+    <AuthorizeView>
+        <Authorized>
+            <FluentLayout>
+                <FluentHeader>
+                    SMSCore
+                    <FluentSpacer />
+                    <a href="authentication/profile">Hello, @context.User.Identity?.Name!</a>
+                <a href="/logout">LogOut</a>
+                    <AntiforgeryToken /> 
+                </FluentHeader>
+
+                <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
+                    <NavMenu />
+                    <FluentBodyContent Class="body-content">
+                        <div class="content">
+                            @if (loading)
+                            {
+                                <Progress />
+                            }
+                            else
+                            {
+                                @Body
+                            }
+                        </div>
+                    </FluentBodyContent>
+                </FluentStack>
+
+                <FluentFooter>
+                    <a style="vertical-align:middle" href="https://www.smscore.com" target="_blank">
+                        Made with <FluentIcon Value="@(new Icons.Regular.Size12.Heart())" Color="@Color.Warning" />
+                        by Stanley Akachukwu
+                    </a>
+                </FluentFooter>
+            </FluentLayout>
+        </Authorized>
+        <NotAuthorized>
+            <Progress />
+        </NotAuthorized>
+    </AuthorizeView>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+<FluentToastProvider Position="ToastPosition.TopCenter" />
+<FluentDialogProvider />
+<FluentTooltipProvider />
+<FluentMessageBarProvider />
+<FluentMenuProvider />
+
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject SMSApiClient SMSApiClient
+
+@code {
+    private bool loading = false;
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        try
+        {
+            var authState = await ((CustomAuthStateProvider)AuthStateProvider).GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (!user.Identity.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/login");
+            }
+            loading = false;
+        }
+        catch (Exception ex)
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+    }
+}

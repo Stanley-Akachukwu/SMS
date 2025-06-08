@@ -1,0 +1,302 @@
+﻿@using SMS.Common.Authorization
+@using SMS.Common.Dtos.Roles
+@using SMS.Common.Enums
+@using SMS.Web.Services.Toasts
+ 
+
+
+@implements IDialogContentComponent<RoleDto>
+
+
+
+
+<FluentDialogHeader ShowDismiss="false">
+    <FluentStack VerticalAlignment="VerticalAlignment.Center">
+        <FluentLabel Typo="Typography.PaneHeader">
+            @Dialog.Instance.Parameters.Title
+        </FluentLabel>
+    </FluentStack>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+
+        <FluentTextField @bind-Value="@Content.Name" style="width: 100%;"><h6>Role Name:</h6></FluentTextField>
+        @if (string.IsNullOrEmpty(Content?.Name))
+        {
+            <div style="color:red">Role Name is required.</div>
+        }
+        <h6>Role Type:</h6>
+        <FluentSelect Id="roleTyp"
+        Name="roleTyp"
+        Value="@selectedRoleTypeId"
+        ValueChanged="@(e => RoleTypeHandler(e))"
+        TOption="string"
+        Height="300px"
+        style="width: 100%;">
+            <FluentOption Value="">Select Role Type</FluentOption>
+            @foreach (var type in roleTypes)
+            {
+                <FluentOption Value="@type.Id.ToString()">@type.Name</FluentOption>
+            }
+        </FluentSelect>
+        @if (string.IsNullOrEmpty(selectedRoleTypeId))
+        {
+            <div style="color:red">Role Type is required.</div>
+        }
+
+        <h6>Copy Role From:</h6>
+        <FluentSelect Id="copyFrom" name="copyFrom" Value="@selectedRoleId" ValueChanged="@(e => CopyRoleHandler(e))" TOption="string" Height="300px" style="width: 100%;">
+            <FluentOption Value="">Select Role to copy from</FluentOption>
+            @foreach (var role in RoleDtos)
+            {
+                <FluentOption Value="@role.Id.ToString()">@role.Name</FluentOption>
+            }
+        </FluentSelect>
+        @if (!shouldCopyFrom)
+        {
+            <FluentTreeView Items="@Items" LazyLoadItems="true" Class="no-selected-indicator">
+                <ItemTemplate>
+                    <FluentCheckbox Value="@(SelectedItems.Contains(context))"
+                    ValueChanged="@(e => CheckboxHandler(e, context))"
+                    Style="margin-right: 12px;">
+                        @context.Text
+                    </FluentCheckbox>
+                </ItemTemplate>
+            </FluentTreeView>
+        }
+        <div>
+            <b>Selected items:</b> @(string.Join("; ", SelectedItems.Select(i => i.Text)))
+        </div>
+    </FluentStack>
+
+    <style>
+        .no-selected-indicator fluent-tree-item[selected]::part(positioning-region) {
+        background-color: var(--neutral-fill-stealth-rest);
+        }
+
+        .no-selected-indicator fluent-tree-item::part(positioning-region):hover {
+        background-color: var(--neutral-fill-stealth-rest);
+        }
+
+        .no-selected-indicator fluent-tree-item[selected]::after {
+        display: none;
+        }
+    </style>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Save())" OnClick="@SaveAsync" Disabled="@isValidFrm">Save</FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@CancelAsync">Cancel</FluentButton>
+</FluentDialogFooter>
+
+@code {
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+
+
+
+    [Parameter]
+    public RoleDto Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+    public List<ParentPermissionDto> parentPermissions { get; set; }
+    public List<RoleType> roleTypes { get; set; }
+    public List<RolePermissionDto> childPermissions { get; set; }
+    private int Count = -1;
+    private IEnumerable<ITreeViewItem> Items = new List<ITreeViewItem>();
+    private List<ITreeViewItem> SelectedItems = new List<ITreeViewItem>();
+    private List<RolePermissionDto> selectedPermissions = new List<RolePermissionDto>();
+    public List<int>? PermissionIds { get; set; } = new List<int>();
+    public List<RoleDto>? RoleDtos { get; set; } = new();
+    private bool shouldCopyFrom { get; set; } = false;
+    private bool isValidFrm = true;
+    private string selectedRoleId = "";
+    private string selectedRoleTypeId = "";
+
+    private CancellationTokenSource cts;
+    private int mouseX;
+    private int mouseY;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        roleTypes = UserRoleTypes.GetUserRoleTypes();
+        if (Content.UserRoleType != null)
+        {
+            var roleType = roleTypes.FirstOrDefault(r => r.Name == Content.UserRoleType.ToString());
+            if (roleType != null)
+            {
+                this.selectedRoleTypeId = roleType.Id.ToString();
+                RoleTypeHandler(this.selectedRoleTypeId);
+            }
+        }
+        RoleDtos = Content.RoleDtos;
+        parentPermissions = ParentPermissions.GetParentPermissions();
+        childPermissions = Content.RolePermissions;
+        PermissionIds = Content.PermissionIds ?? new List<int>();
+        Items = CreateTree().Items ?? [];
+        cts = new CancellationTokenSource();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            StateHasChanged();
+            _ = StartInputValidation(cts.Token);
+        }
+    }
+
+    private async Task StartInputValidation(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            await Task.Delay(1000, token);  
+            if (Content?.Name?.Length > 3 && !string.IsNullOrEmpty(selectedRoleTypeId))
+            {
+                isValidFrm = false;
+                StateHasChanged();  
+            }
+            else
+            {
+                isValidFrm = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrEmpty(Content?.Name) || Content?.Name?.Length < 3 || string.IsNullOrEmpty(selectedRoleTypeId))
+        {
+            _toastService.ShowToastMessage("Error", "Invalid role name or type.", Color.Error, ToastIntent.Error);
+             return;
+        }
+        else
+        {
+            Content.PermissionIds = PermissionIds;
+            await Dialog.CloseAsync(Content);
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        await Dialog.CancelAsync();
+    }
+    private void CopyRoleHandler(string roleId)
+    {
+
+        shouldCopyFrom = true;//!string.IsNullOrWhiteSpace(roleId);  
+
+        if (!string.IsNullOrEmpty(roleId) )
+        {
+            Content.CopyPermissions = new CopyPermissionDto
+                {
+                    AllowedCopy = true,
+                    CopyFromRoleId = roleId
+                };
+        }
+        StateHasChanged();  
+    }
+
+    private void RoleTypeHandler(string id)
+    {
+        if (!string.IsNullOrEmpty(id) && int.TryParse(id, out var roleTypeId))
+        {
+            if (Enum.IsDefined(typeof(UserRoleType), roleTypeId))
+            {
+                Content.UserRoleType = (UserRoleType)roleTypeId;
+            }
+        }
+        this.selectedRoleTypeId = id;
+    }
+
+    // Add or remove item from the selected items list
+    private void CheckboxHandler(bool selected, ITreeViewItem item)
+    {
+        var p = childPermissions.FirstOrDefault(c => c.Id == item.Id);
+        if (p!= null)
+        {
+            if (selected && !SelectedItems.Contains(item))
+            {
+                SelectedItems.Add(item);
+                // selectedPermissions.Add(p);
+                PermissionIds.Add(p.PermissionId);
+            }
+            else if (!selected && SelectedItems.Contains(item))
+            {
+                SelectedItems.Remove(item);
+                // selectedPermissions.Remove(p);
+                PermissionIds.Remove(p.PermissionId);
+            }
+            // Content.RolePermissions = selectedPermissions;
+            Content.PermissionIds = PermissionIds;
+        }
+        if (p == null)
+        {
+            _toastService.ShowToastMessage("Error", "Operation not allowed.", Color.Error, ToastIntent.Error);
+            return;
+        }
+    }
+
+    private TreeViewItem CreateTree()
+    {
+        var treeItem = new TreeViewItem();
+
+        try
+        {
+            var permTrees = new List<TreeViewItem>();
+            foreach (var p in parentPermissions)
+            {
+                var children = new List<TreeViewItem>();
+                var pChildPermissions = childPermissions.Where(i => i.ParentId == p.ParentId);
+                if (pChildPermissions.Any())
+                {
+                    foreach (var child in pChildPermissions)
+                    {
+                        var item = new TreeViewItem
+                            {
+                                Text = child.Description,
+                                Id = child.Id,
+                            };
+                        if (child.Assigned)
+                        {
+                            SelectedItems.Add(item);
+                        }
+                        children.Add(item);
+                    }
+                }
+                permTrees.Add(new TreeViewItem
+                    {
+                        Text = p.Description,
+                        Id = p.Id,
+                        Items = children,
+                        // Disabled = true
+                    });
+            }
+            treeItem.Text = "SMS Core Permissions";
+            treeItem.Id = "SMSCorePermission";
+            // treeItem.Disabled = true;
+            treeItem.Items = new List<TreeViewItem>
+        {
+            new TreeViewItem
+            {
+                Text = "SMS Core Permissions",
+                Id = "SMSCorePermission",
+                Items= permTrees,
+                // Disabled=true
+            }
+        };
+
+        }
+        catch (Exception ex)
+        {
+
+        }
+
+        return treeItem;
+    }
+}

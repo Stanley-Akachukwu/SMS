@@ -1,0 +1,291 @@
+﻿@using SMS.Common.Dtos.Departments
+@using SMS.Common.Dtos.Roles
+@using SMS.Web.Services.Toasts
+@using SMS.Web.Services.Users
+@using System.Text.RegularExpressions
+@using System.Globalization
+@implements IDialogContentComponent<UserDto>
+
+<FluentDialogHeader ShowDismiss="false">
+    <FluentStack VerticalAlignment="VerticalAlignment.Center">
+        <FluentLabel Typo="Typography.PaneHeader">
+            @Dialog.Instance.Parameters.Title
+        </FluentLabel>
+    </FluentStack>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+
+        <FluentTextField @bind-Value="@Content.FirstName" style="width: 100%;"><h6>First Name:</h6></FluentTextField>
+        @if (string.IsNullOrEmpty(Content?.FirstName))
+        {
+            <div style="color:red">FirstName is required.</div>
+        }
+        <FluentTextField @bind-Value="@Content.SurName" style="width: 100%;"><h6>Surname:</h6></FluentTextField>
+        @if (string.IsNullOrEmpty(Content?.SurName))
+        {
+            <div style="color:red">Surname is required.</div>
+        }
+        <h6>Role:</h6>
+        <FluentSelect Id="role" name="role" Value="@selectedRoleId" ValueChanged="@(e => RoleIDHandler(e))" TOption="string" Height="300px" style="width: 100%;">
+            <FluentOption Value="">Select Role</FluentOption>
+            @foreach (var role in RoleDtos)
+            {
+                <FluentOption Value="@role.Id.ToString()">@role.Name</FluentOption>
+            }
+        </FluentSelect>
+        @if (string.IsNullOrEmpty(selectedRoleId))
+        {
+            <div style="color:red">Role is required.</div>
+        }
+
+        <FluentSelect Id="gender" name="gender" Value="@selectedGenderCode" ValueChanged="@(e => GenderSelectHandler(e))" TOption="string" Height="300px" style="width: 100%;">
+            <FluentOption Value="">Select Gender</FluentOption>
+            <FluentOption Value="M">Male</FluentOption>
+            <FluentOption Value="F">Female</FluentOption>
+        </FluentSelect>
+        @if (string.IsNullOrEmpty(selectedGenderCode))
+        {
+            <div style="color:red">Gender is required.</div>
+        }
+
+        <FluentSelect Id="department" name="department" Value="@selectedDepartmentId" ValueChanged="@(e => DepartmentSelectHandler(e))" TOption="string" Height="300px" style="width: 100%;">
+            <FluentOption Value="">Select Department</FluentOption>
+            @foreach (var d in departments)
+            {
+                <FluentOption Value="@d.Id.ToString()">@d.Name</FluentOption>
+            }
+        </FluentSelect>
+        @if (string.IsNullOrEmpty(selectedDepartmentId))
+        {
+            <div style="color:red">Department is required.</div>
+        }
+    </FluentStack>
+
+    <FluentTextField @bind-Value="@Content.PhoneNumber" style="width: 100%;"><h6>Phone:</h6></FluentTextField>
+    @if (string.IsNullOrEmpty(Content?.PhoneNumber))
+    {
+        <div style="color:red">Phone number is required.</div>
+    }
+    <FluentTextField @bind-Value="@Content.UserName" style="width: 100%;"><h6>Email:</h6></FluentTextField>
+    @if(string.IsNullOrEmpty(Content?.UserName))
+    {
+        <div style="color:red">Email is required.</div>
+    }
+    @if (!string.IsNullOrEmpty(Content?.UserName) && !IsValidEmail(Content?.UserName))
+    {
+        <div stylN="color:red">Email not valid.</div>
+    }
+
+    <style>
+        .no-selected-indicator fluent-tree-item[selected]::part(positioning-region) {
+        background-color: var(--neutral-fill-stealth-rest);
+        }
+
+        .no-selected-indicator fluent-tree-item::part(positioning-region):hover {
+        background-color: var(--neutral-fill-stealth-rest);
+        }
+
+        .no-selected-indicator fluent-tree-item[selected]::after {
+        display: none;
+        }
+    </style>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Save())" OnClick="@SaveAsync" Disabled="@isValidFrm">Save</FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@CancelAsync">Cancel</FluentButton>
+</FluentDialogFooter>
+
+@code {
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+    [Inject] private IUsersService _uersService { get; set; }
+
+    [Parameter]
+    public UserDto Content { get; set; } = default!;
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+    private IEnumerable<ITreeViewItem> Items = new List<ITreeViewItem>();
+    private List<ITreeViewItem> SelectedItems = new List<ITreeViewItem>();
+    public List<RoleDto>? RoleDtos { get; set; } = new();
+    private bool isValidFrm = true;
+    private string selectedRoleId = "";
+    private string selectedGenderCode = "";
+    private string selectedDepartmentId = "";
+    public List<DepartmentDto> departments { get; set; } = new List<DepartmentDto>();
+    private CancellationTokenSource cts;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        RoleDtos = Content.Roles;
+        departments = Content.Departments;
+        Content.SurName = "Test";
+        Content.FirstName = "Test";
+        Content.UserName = "Test@gmail.com";
+        Content.PhoneNumber = "9008777";
+        if (Content.Role != null)
+        {
+            this.selectedRoleId = Content?.Id!;
+            RoleIDHandler(this.selectedRoleId);
+        }
+        if (Content?.Gender != null)
+        {
+            this.selectedGenderCode = Content.Gender;
+            GenderSelectHandler(this.selectedGenderCode);
+        }
+        if (Content.DepartmentId != null)
+        {
+            this.selectedDepartmentId = Content.DepartmentId.ToString();
+            DepartmentSelectHandler(this.selectedDepartmentId);
+        }
+        cts = new CancellationTokenSource();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            StateHasChanged();
+            _ = StartInputValidation(cts.Token);
+        }
+    }
+
+
+    private async Task StartInputValidation(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            await Task.Delay(1000, token);
+            if (Content?.FirstName?.Length > 2 && 
+                Content?.SurName?.Length >2 &&
+                !string.IsNullOrEmpty(selectedGenderCode) && 
+                !string.IsNullOrEmpty(selectedDepartmentId) &&
+                !string.IsNullOrEmpty(selectedRoleId)&&
+                 !string.IsNullOrEmpty(Content?.PhoneNumber) &&
+            IsValidEmail(Content?.UserName))
+            {
+                isValidFrm = false;
+                 StateHasChanged();
+            }
+            else
+            {
+                isValidFrm = true;
+                StateHasChanged();
+            }
+        }
+    }
+    private bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            // Normalize the domain
+            email = Regex.Replace(email, @"(@)(.+)$", DomainMapper,
+                                  RegexOptions.None, TimeSpan.FromMilliseconds(200));
+
+            // Examines the domain part of the email and normalizes it.
+            string DomainMapper(Match match)
+            {
+                var idn = new IdnMapping();
+
+                // Use IdnMapping class to convert Unicode domain names.
+                string domainName = idn.GetAscii(match.Groups[2].Value);
+
+                return match.Groups[1].Value + domainName;
+            }
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+
+        try
+        {
+            return Regex.IsMatch(email,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+                RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+    }
+    private async Task SaveAsync()
+    {
+        //Content.FullName = $"{Content.FirstName} {Content.Surname}";
+       
+
+        // if (!string.IsNullOrEmpty(Content?.Email))
+        // {
+        //     var rsp = await _uersService.CreateUserAsync(Content?.Email);
+        //     if (rsp?.IsSuccess == true && rsp.Data != null)
+        //     {
+        //         Content.IdentityUserId = rsp.Data.UserId;
+        //     }
+        //     else
+        //     {
+        //         CancelAsync();
+        //     }
+        // }
+
+        
+        if (string.IsNullOrEmpty(Content?.FirstName) &&
+               string.IsNullOrEmpty(Content?.SurName) &&
+               string.IsNullOrEmpty(selectedGenderCode) &&
+               string.IsNullOrEmpty(selectedDepartmentId) &&
+               string.IsNullOrEmpty(selectedRoleId) &&
+               string.IsNullOrEmpty(Content?.PhoneNumber) &&
+               string.IsNullOrEmpty(Content?.Id))
+        {
+            _toastService.ShowToastMessage("Error", "Invalid form submit.", Color.Error, ToastIntent.Error);
+            return;
+        }
+        else
+        {
+            await Dialog.CloseAsync(Content);
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        await Dialog.CancelAsync();
+    }
+
+    private void RoleIDHandler(string id)
+    {
+        if (!string.IsNullOrEmpty(id))
+        {
+            this.selectedRoleId = id;            
+            Content.Id = selectedRoleId;
+        }
+    }
+    private void DepartmentSelectHandler(string id)
+    {
+        if (!string.IsNullOrEmpty(id))
+        {
+            this.selectedDepartmentId = id;
+            Content.DepartmentId = int.Parse(selectedDepartmentId);
+        }
+    }
+    private void GenderSelectHandler(string code)
+    {
+        if (!string.IsNullOrEmpty(code))
+        {
+            this.selectedGenderCode = code;
+            Content.Gender = selectedGenderCode;
+        }
+    }
+}

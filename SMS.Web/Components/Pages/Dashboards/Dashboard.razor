@@ -1,0 +1,119 @@
+﻿@page "/dashboard"
+@using SMS.Common.Dtos.Dashboards
+@using SMS.Web.Components.Shared
+@using SMS.Web.Services.Dashboards
+@using System.Security.Claims
+
+<PageTitle>Dashboard</PageTitle>
+
+
+
+<FluentStack Style="margin-bottom: 24px;" HorizontalAlignment="HorizontalAlignment.Stretch">
+
+    <FluentStack Horizontal Wrap>
+        @if (loading)
+        {
+            <Progress />
+        }
+        else if (dashboardItems != null)
+        {
+            @foreach (var item in dashboardItems)
+            {
+                var icon = (Icon)GetIcon(item.IconSet, item.IconName, item.IconSize);
+                <FluentCard Style="width: 200px;height:150px;">
+                    <FluentHeader>
+                        <FluentNavLink Href="@item.Href"
+                        Icon="@icon"
+                        IconColor="@(Enum.Parse<Color>(item.IconColor))">
+                            @item.Title
+                        </FluentNavLink>
+                    </FluentHeader>
+
+                    <div class="card-body">
+                        @foreach (var metric in item.Metrics)
+                        {
+                            <div class="body-item">@metric.Label: @metric.Value</div>
+                        }
+                    </div>
+                </FluentCard>
+            }
+        }
+
+    </FluentStack>
+
+</FluentStack>  
+
+@code {
+    [Inject] private IDashboardService _dashboardService { get; set; }
+    [Inject] private SMSApiClient SMSApiClient { get; set; }
+    [Inject] private NavigationManager _navigation { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthState { get; set; }
+
+    bool loading = false;
+    private List<DashboardItemDto> dashboardItems = new();
+    ClaimsPrincipal? currentUser = null;
+    private string userId = string.Empty;
+    private object GetIcon(string set, string name, string size)
+    {
+        try
+        {
+            var fullNamespace = $"Microsoft.FluentUI.Icons.{set}.{size}";
+            var iconType = Type.GetType($"{fullNamespace}+{name}, Microsoft.FluentUI.Icons");
+
+            return iconType != null ? Activator.CreateInstance(iconType) : null;
+        }
+        catch
+        {
+            return null; // fallback or log error
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+
+        var authState = await AuthState;
+        currentUser = authState.User;
+        userId = currentUser?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        if (currentUser.Identity == null || !currentUser.Identity.IsAuthenticated)
+        {
+            _navigation.NavigateTo("/login/dashboard");
+        }
+        try
+        {
+            if (currentUser.Identity != null && currentUser.Identity.IsAuthenticated)
+            {
+                var loadDashboardTask = LoadData();
+                // var getDepartmentTask = GetDepartments();
+                // var getRolesTask = LoadRoles();
+
+
+                await Task.WhenAll(loadDashboardTask);
+            }
+           
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    private async Task LoadData(string? department = "all")
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(100));
+        //var dashboardResult = await _dashboardService.GetDashboardsAsync(department, cts.Token);
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<List<DashboardItemDto>>>($"/api/dashboards/{department}", userId);
+
+        if (rsp?.StatusCode == 401)
+        {
+            _navigation.NavigateTo($"/login/dashboard");
+            return;
+        }
+
+        if (rsp?.IsSuccess == true && rsp.Data is not null)
+        {
+            loading = false;
+            dashboardItems = rsp.Data;
+        }
+    }
+}
+
