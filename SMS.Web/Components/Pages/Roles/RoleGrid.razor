@@ -62,7 +62,7 @@
 @code {
     [Inject] private IJSRuntime _jSRuntime { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-    [Inject] IDialogService _dialogService { get; set; }
+     [Inject] IDialogService _dialogService { get; set; }
     [Inject] ISmsCoreToastService _toastService { get; set; }
     [Inject] private SMSApiClient SMSApiClient { get; set; }
     [CascadingParameter]
@@ -182,14 +182,14 @@
 
         try
         {
-            var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"roles/delete", role?.Id);
-            // await _rolePermissionService.DeleteRoleAsync(role?.Id, CancellationToken.None);
+            var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/roles/delete/{role?.Id}");
             await LoadData();
+            _toastService.ShowToastMessage("Role Deletion", "Removed successfully!", Color.Success, ToastIntent.Success);
         }
         catch (Exception exc)
         {
             string errorMessage = exc.InnerException?.Message ?? exc.Message;
-            await _dialogService.ShowErrorAsync("Error", errorMessage);
+            _toastService.ShowToastMessage("Role Deletion", errorMessage, Color.Error, ToastIntent.Error);
         }
     }
     

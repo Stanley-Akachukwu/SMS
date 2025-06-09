@@ -2,6 +2,7 @@
 @using SMS.Common.Dtos.Dashboards
 @using SMS.Web.Components.Shared
 @using System.Security.Claims
+@using System.Net
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -88,7 +89,7 @@
 
                 await Task.WhenAll(loadDashboardTask);
             }
-           
+
         }
         finally
         {
@@ -97,21 +98,39 @@
     }
     private async Task LoadData(string? department = "all")
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(100));
-        //var dashboardResult = await _dashboardService.GetDashboardsAsync(department, cts.Token);
-        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<List<DashboardItemDto>>>($"/api/dashboards/{department}", userId);
-
-        if (rsp?.StatusCode == 401)
+        var rsp = new ApiResponse<List<DashboardItemDto>>();
+        try
         {
-            _navigation.NavigateTo($"/login/dashboard");
-            return;
-        }
+            rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<List<DashboardItemDto>>>($"/api/dashboards/{department}", userId);
+            if (rsp?.StatusCode == 401)
+            {
+                _navigation.NavigateTo($"/login/dashboard");
+                return;
+            }
 
-        if (rsp?.IsSuccess == true && rsp.Data is not null)
+            if (rsp?.IsSuccess == true && rsp.Data is not null)
+            {
+                loading = false;
+                dashboardItems = rsp.Data;
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            var statusCode = httpEx.StatusCode;
+            if (httpEx.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                _navigation.NavigateTo($"/login");
+                return;
+            }
+            loading = false;
+        }
+        catch (Exception ex)
         {
             loading = false;
-            dashboardItems = rsp.Data;
+            return;
         }
+       
+        
     }
 }
 

@@ -99,7 +99,7 @@ namespace SMS.Web.Services
             }
             return default;
         }
-        public async Task<T> DeleteAsync<T>(string path, string? userId)
+        public async Task<T> DeleteAsync<T>(string path, string? userId="")
         {
             //await SetAuthorizeHeader();
             return await httpClient.DeleteFromJsonAsync<T>(path);

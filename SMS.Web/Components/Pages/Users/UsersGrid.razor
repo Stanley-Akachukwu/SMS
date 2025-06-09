@@ -118,7 +118,6 @@
     private async Task LoadRoles(string? id = "all")
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        // var rolesResult = await _rolePermissionService.GetRolesAsync(cts.Token);
         var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<RoleDto>>>($"/api/roles/all", null);
         if (rsp?.IsSuccess == true && rsp.Data != null)
         {
@@ -193,14 +192,17 @@
 
         try
         {
-            var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"roles/delete", user?.Id);
+            var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/users/delete/{user?.Id}");
 
             await LoadData();
+            _toastService.ShowToastMessage("User Deletion", "Removed successfully!", Color.Success, ToastIntent.Success);
+
         }
         catch (Exception exc)
         {
             string errorMessage = exc.InnerException?.Message ?? exc.Message;
-            await _dialogService.ShowErrorAsync("Error", errorMessage);
+            _toastService.ShowToastMessage("User Deletion", errorMessage, Color.Error, ToastIntent.Error);
+
         }
     }
    

@@ -108,7 +108,7 @@ namespace SMS.ApiService.Controllers.Roles
 
         [Authorize]
         [HasPermission(Permission.CanDeletePermisions)]
-        [HttpPost("delete/{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<ActionResult> DeleteRolePermissionsAsync(string id, CancellationToken cancellationToken)
         {
             return Ok(await _repository.DeleteRole(id, cancellationToken));

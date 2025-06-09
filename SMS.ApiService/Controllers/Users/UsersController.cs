@@ -41,7 +41,7 @@ namespace SMS.ApiService.Controllers.Users
         }
 
         [Authorize]
-        [HttpPost("delete/{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<ActionResult> DeleteUserAsync(string id, CancellationToken cancellationToken)
         {
             return Ok(await _repository.DeleteUserAsync(id, cancellationToken));

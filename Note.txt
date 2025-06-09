@@ -1,6 +1,15 @@
-First user: stanley.c.akachukwu@yopmail.com    Password123!
 
-Hard Coded URLS:
+-------------SMS Users------------
+
+First user: stanley.c.akachukwu@yopmail.com    Password123!
+chika.iheme@gmail.com   1yR5!9of 
+
+
+
+
+
+
+-----------------Hard Coded URLS:---------------
 
 UserRepository.CreateOrUpdateUserAsync:  https://localhost:7220/api/auth/register
 
