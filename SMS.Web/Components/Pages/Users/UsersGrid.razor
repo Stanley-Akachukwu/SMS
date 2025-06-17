@@ -5,6 +5,7 @@
 @using SMS.Common.Enums
 @using SMS.Web.Components.Shared
 @using SMS.Web.Services.Toasts
+@using System.Security.Claims
 
 @using static Microsoft.FluentUI.AspNetCore.Components.Icons.Filled.Size12
 
@@ -68,7 +69,7 @@
 @code {
     [Inject] private IJSRuntime _jSRuntime { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-   
+
     [Inject] ISmsCoreToastService _toastService { get; set; }
     [Inject] IDialogService _dialogService { get; set; }
     [Inject] private SMSApiClient SMSApiClient { get; set; }
@@ -85,7 +86,7 @@
     bool ShowNavMenu = true;
     bool ShowBodyContent = true;
     bool ShowFooter = true;
-
+    string currentUser = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         try
@@ -95,16 +96,21 @@
             var loadDataTask = LoadData();
             var getDepartmentTask = GetDepartments();
             var getRolesTask = LoadRoles();
+            var getCurrentUserTask = GetCurrentUser();
 
-
-            await Task.WhenAll(loadDataTask, getDepartmentTask, getRolesTask);
+            await Task.WhenAll(loadDataTask, getDepartmentTask, getRolesTask, getCurrentUserTask);
         }
         finally
         {
             loading = false;
         }
     }
-    
+    private async Task GetCurrentUser()
+    {
+        var authState = await AuthState;
+        var user = authState.User;
+        currentUser = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    }
     private async Task LoadData()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -138,7 +144,7 @@
         user.Roles = roles?.ToList();
         user.Action = SMSCoreAction.Create;
         user.Departments = departments;
-
+        user.CreatedByUserId = currentUser;
         DialogParameters<UserDto> parameters = new()
             {
                 Title = $"Create User",
@@ -152,11 +158,12 @@
     }
     private async Task EditUser(UserDto user)
     {
-        // await LoadRoles(userSetup.IdentityUserId);
         user.Roles = roles?.ToList();
         user.Action = SMSCoreAction.Edit;
+        user.Role = roles?.FirstOrDefault(r => r.Id == user.RoleId);
+        user.RoleId = user?.Role?.Id;
         user.Departments = departments;
-
+        user.CreatedByUserId = currentUser;
         DialogParameters<UserDto> parameters = new()
             {
                 Title = $"Edit User",
@@ -170,13 +177,11 @@
     }
     private async Task DeleteUser(UserDto user)
     {
-        // Check if the item is null
         if (user is null)
         {
             return;
         }
 
-        // Create and show a dialog to confirm the delete
         IDialogReference dialog = await _dialogService.ShowConfirmationAsync(
             $"Are you sure you want to delete the user '{user.UserName}'?",
             "Yes",
@@ -184,7 +189,6 @@
             "Delete user?");
         DialogResult result = await dialog.Result;
 
-        // If cancelled, return
         if (result.Cancelled)
         {
             return;
@@ -210,31 +214,41 @@
     private async Task HandleEditRoleDialogResult(DialogResult result, UserDto user)
     {
         var bpFont = new Icons.Regular.Size20.Backpack();
-        // If cancelled, return
         if (result.Cancelled)
         {
-            _toastService.ShowToastMessage("User Setup Error", "Internal Server Error", Color.Error, ToastIntent.Error);
+            _toastService.ShowToastMessage("User Setup", "Successfully cancelled", Color.Warning, ToastIntent.Warning);
             return;
         }
         loading = true;
 
+        string message, actionTitle = string.Empty;
+        if (user.Action == SMSCoreAction.Create)
+        {
+            actionTitle = "User Setup";
+            message = "User created successfully!";
+        }
+        else
+        {
+            actionTitle = "User Update";
+            message = "User updated successfully!";
+        }
         user.CreatedByUserId = Ulid.NewUlid().ToString();
         user.Roles = new List<RoleDto>();
         user.Departments = new List<DepartmentDto>();
 
-        // var rsp = await _uersService.CreateOrUpdateUserAsync(user, CancellationToken.None);
         var rsp = await SMSApiClient.PostAsync<ApiResponse<string>, UserDto>("/api/users/user", user);
 
         if (rsp?.IsSuccess == true && result.Data != null && rsp?.StatusCode != StatusCodes.Status500InternalServerError)
         {
             loading = false;
             await LoadData();
-            _toastService.ShowToastMessage("User Setup", "Saved Successfully", Color.Success, ToastIntent.Success);
+            _toastService.ShowToastMessage(actionTitle, message, Color.Success, ToastIntent.Success);
         }
         else
         {
+            loading = false;
             await LoadData();
-            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+            _toastService.ShowToastMessage(actionTitle, rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
         }
     }
 }

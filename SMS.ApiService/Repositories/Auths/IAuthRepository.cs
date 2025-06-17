@@ -1,4 +1,5 @@
-﻿using SMS.ApiService.Entities.Users;
+﻿using Microsoft.EntityFrameworkCore;
+using SMS.ApiService.Entities.Users;
 using SMS.Common.Dtos;
 using SMS.Common.Dtos.Auths;
 using SMS.Common.Dtos.Users;

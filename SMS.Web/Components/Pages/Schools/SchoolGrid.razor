@@ -1,0 +1,183 @@
+﻿@page "/schools"
+
+@using SMS.Common.Dtos.Schools
+@using SMS.Common.Enums
+@using SMS.Web.Components.Shared
+@using SMS.Web.Services.Toasts
+@using System.Security.Claims
+
+<FluentLayout Style="margin-top: 10px;">
+    <FluentHeader>
+        <h3>Schools</h3>
+        <FluentSpacer />
+        <FluentButton IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@AddNew">Add</FluentButton>
+    </FluentHeader>
+
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+        @if (loading)
+        {
+            <Progress />
+        }
+        else if (Schools != null)
+        {
+            <FluentDataGrid Items="Schools!.AsQueryable()" RowSize="DataGridRowSize.Small" AutoItemsPerPage="true" Style="overflow-y:hidden;">
+                <PropertyColumn Property="@(c => c.Name)" Title="Name" Sortable="true" />
+                <PropertyColumn Property="@(c => c.Description)" Title="Description" Sortable="true" />
+                @*  <PropertyColumn Property="@(c => c.Setting.Name)" Title="Setting Name" Sortable="true" /> *@
+                <TemplateColumn Title="Actions">
+                    <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditSchool(context))" />
+                    <FluentButton IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteSchool(context))" />
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentStack>
+</FluentLayout>
+
+@code {
+    [Inject] private SMSApiClient SMSApiClient { get; set; }
+
+    [Inject] private IJSRuntime _jSRuntime { get; set; }
+    [Inject] private NavigationManager _navigation { get; set; }
+
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+    [Inject] IDialogService _dialogService { get; set; }
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthState { get; set; }
+
+    private List<SchoolDto>? Schools;
+    public SMSCoreAction Action { get; set; }
+    public List<SchoolSettingDto>? Settings { get; set; } = new();
+    private bool loading = false;
+    string currentUser = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+
+            var loadDataTask = LoadData();
+            var getSettingsTask = GetSettings();
+            var getCurrentUserTask = GetCurrentUser();
+
+            await Task.WhenAll(loadDataTask, getSettingsTask, getCurrentUserTask);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    private async Task GetCurrentUser()
+    {
+        var authState = await AuthState;
+        var user = authState.User;
+        currentUser = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    }
+    private async Task LoadData()
+    {
+        loading = true;
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<SchoolDto>>>("/api/schools", null);
+        if (rsp?.IsSuccess == true && rsp.Data != null)
+        {
+            Schools = rsp.Data.ToList();
+        }
+        else
+        {
+            Schools = new List<SchoolDto>();
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+        loading = false;
+    }
+    private async Task GetSettings()
+    {
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<SchoolSettingDto>>>($"/api/schoolSettings", null);
+        if (rsp?.IsSuccess == true && rsp.Data != null)
+        {
+            Settings = rsp.Data.ToList();
+        }
+        else
+        {
+            Settings = new List<SchoolSettingDto>();
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+    }
+    private async Task AddNew()
+    {
+        var school = new SchoolDto();
+        school.Settings = Settings;
+        school.Action = SMSCoreAction.Create;
+        var dialog = await _dialogService.ShowPanelAsync<EditSchoolPanel>(school, new() { Title = "Add School" });
+        var result = await dialog.Result;
+        var dialogResult = await dialog.Result;
+        await HandleEditSchoolDialogResult(dialogResult, school);
+    }
+
+    private async Task EditSchool(SchoolDto school)
+    {
+        school.Settings = Settings;
+        school.Action = SMSCoreAction.Edit;
+        school.Setting = Settings?.FirstOrDefault(s => s.Id == school?.SettingId);
+        var dialog = await _dialogService.ShowPanelAsync<EditSchoolPanel>(school, new() { Title = "Edit School" });
+        var dialogResult = await dialog.Result;
+        await HandleEditSchoolDialogResult(dialogResult, school);
+    }
+    private async Task HandleEditSchoolDialogResult(DialogResult result, SchoolDto school)
+    {
+        if (result.Cancelled)
+        {
+            _toastService.ShowToastMessage("School Setup", "Successfully cancelled", Color.Warning, ToastIntent.Warning);
+            return;
+        }
+        loading = true;
+
+        string message, actionTitle = string.Empty;
+
+        if (school.Action == SMSCoreAction.Create)
+        {
+            actionTitle = "School Setup";
+            message = "School created successfully!";
+        }
+        else
+        {
+            actionTitle = "User Update";
+            message = "User updated successfully!";
+        }
+        school.CreatedByUserId = currentUser;
+        school.Settings = new List<SchoolSettingDto>();
+
+        var rsp =await SMSApiClient.PostAsync<ApiResponse<string>, SchoolDto>("/api/schools", school);
+
+        if (rsp?.IsSuccess == true && result.Data != null && rsp?.StatusCode != StatusCodes.Status500InternalServerError)
+        {
+            loading = false;
+            await LoadData();
+            _toastService.ShowToastMessage(actionTitle, message, Color.Success, ToastIntent.Success);
+        }
+        else
+        {
+            loading = false;
+            await LoadData();
+            _toastService.ShowToastMessage(actionTitle, rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+    }
+    private async Task DeleteSchool(SchoolDto school)
+    {
+        var dialog = await _dialogService.ShowConfirmationAsync(
+            $"Are you sure you want to delete '{school.Name}'?",
+            "Yes", "No", "Delete School?");
+        var result = await dialog.Result;
+        if (result.Cancelled)
+            return;
+
+        var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/school/{school.Id}");
+        if (rsp?.IsSuccess == true)
+        {
+            await LoadData();
+            _toastService.ShowToastMessage("School", "Deleted successfully!", Color.Success, ToastIntent.Success);
+        }
+        else
+        {
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+    }
+}

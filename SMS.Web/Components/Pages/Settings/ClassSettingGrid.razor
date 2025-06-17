@@ -1,0 +1,193 @@
+﻿@using SMS.Common.Dtos.Schools
+@using SMS.Web.Components.Shared
+@using SMS.Web.Services.Toasts
+
+
+
+
+<FluentLayout Style="margin-top: 10px;margin-bottom: 1px;">
+    @if (!loading && ShowHeader)
+    {
+        <FluentHeader>
+            <h3>Class Settings</h3>
+            <FluentSpacer />
+            <FluentButton IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@(() => AddNew())">Add</FluentButton>
+        </FluentHeader>
+    }
+
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+
+        @if (ShowBodyContent)
+        {
+            <FluentBodyContent>
+                @if (loading)
+                {
+                    <Progress />
+                }
+                else if (ClassSettings != null)
+                {
+                    <div id="datagrid-container">
+                        <FluentStack Orientation="Orientation.Vertical" Width="100%">
+                            <FluentDataGrid Items="ClassSettings!.AsQueryable()"
+                            Pagination="@pagination"
+                            RowSize="@rowSize"
+                            AutoItemsPerPage="true"
+                            Style="overflow-y:hidden;">
+                                <PropertyColumn Property="@(c => c.Name)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.Description)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.MaxPopulationSize)" Sortable="true" />
+                                <PropertyColumn Property="@(c => c.MinNumberOfTeachers)" Sortable="true" />
+                                <TemplateColumn Title="Actions">
+                                    <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditClassSetting(context))" />
+                                    <FluentButton IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteClassSetting(context))" />
+                                </TemplateColumn>
+                            </FluentDataGrid>
+                            <FluentPaginator State="@pagination" />
+                        </FluentStack>
+                    </div>
+                }
+            </FluentBodyContent>
+        }
+    </FluentStack>
+    @if (ShowFooter)
+    {
+        <FluentFooter Style="@("height: 40px; color: black; text-align: center;")">
+            Footer
+        </FluentFooter>
+    }
+
+</FluentLayout>
+
+
+@code {
+    [Inject] private IJSRuntime _jSRuntime { get; set; }
+    [Inject] private NavigationManager _navigation { get; set; }
+    [Inject] IDialogService _dialogService { get; set; }
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+    [Inject] private SMSApiClient SMSApiClient { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthState { get; set; }
+    DataGridRowSize rowSize = DataGridRowSize.Small;
+    IQueryable<ClassSettingDto>? ClassSettings;
+
+    PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
+    bool loading = false;
+    bool ShowHeader = true;
+    bool ShowNavMenu = true;
+    bool ShowBodyContent = true;
+    bool ShowFooter = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+
+            var loadDataTask = LoadData();
+
+            await Task.WhenAll(loadDataTask);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    private async Task LoadData()
+    {
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<ClassSettingDto>>>($"/api/classsettings", null);
+
+        if (rsp?.IsSuccess == true && rsp.Data != null)
+        {
+            ClassSettings = rsp.Data.AsQueryable();
+        }
+        else
+        {
+
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+    }
+
+
+    private async Task AddNew()
+    {
+        _toastService.ShowToastMessage("Setting Addition", "Setting is manually configured!", Color.Warning, ToastIntent.Warning);
+    }
+    private async Task EditClassSetting(ClassSettingDto classSettingDto)
+    {
+        DialogParameters<ClassSettingDto> parameters = new()
+            {
+                Title = $"Edit Class Setting",
+                Alignment = HorizontalAlignment.Right,
+                PreventDismissOnOverlayClick = true,
+                PreventScroll = true
+            };
+        var dialog = await _dialogService.ShowPanelAsync<EditClassSettingPanel>(classSettingDto, parameters);
+        var dialogResult = await dialog.Result;
+        await HandleEditClassSettingDialogResult(dialogResult, classSettingDto);
+    }
+    private async Task DeleteClassSetting(ClassSettingDto classSettingDto)
+    {
+        // Check if the item is null
+        if (classSettingDto is null)
+        {
+            return;
+        }
+
+        // Create and show a dialog to confirm the delete
+        IDialogReference dialog = await _dialogService.ShowConfirmationAsync(
+            $"Are you sure you want to delete the setting '{classSettingDto.Name}'?",
+            "Yes",
+            "No",
+            "Delete role?");
+        DialogResult result = await dialog.Result;
+
+        // If cancelled, return
+        if (result.Cancelled)
+        {
+            return;
+        }
+
+        // try
+        // {
+        //     var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/roles/delete/{role?.Id}");
+        //     await LoadData();
+        //     _toastService.ShowToastMessage("Role Deletion", "Removed successfully!", Color.Success, ToastIntent.Success);
+        // }
+        // catch (Exception exc)
+        // {
+        //     string errorMessage = exc.InnerException?.Message ?? exc.Message;
+        //     _toastService.ShowToastMessage("Role Deletion", errorMessage, Color.Error, ToastIntent.Error);
+        // }
+    }
+
+
+    private async Task HandleEditClassSettingDialogResult(DialogResult result, ClassSettingDto classSettingDto)
+    {
+        // // If cancelled, return  Roles/create
+        // if (result.Cancelled)
+        // {
+        //     return;
+        // }
+
+
+        // loading = true;
+
+        // role.CreatedById = Ulid.NewUlid().ToString();
+        // role.RoleDtos = new List<RoleDto>();
+        // // var rsp = await _rolePermissionService.CreateOrUpdateRoleAsync(role, CancellationToken.None);
+        // var rsp = await SMSApiClient.PostAsync<ApiResponse<string>, RoleDto>("/api/Roles/create", role);
+        // if (rsp?.IsSuccess == true && result.Data != null)
+        // {
+        //     loading = false;
+        //     _toastService.ShowToastMessage("Role Creation", "Submitted successfully!", Color.Success, ToastIntent.Success);
+        // }
+        // else
+        // {
+        //     _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        // }
+
+        // await LoadData();
+        // await GetPermissions();
+    }
+
+}

@@ -75,8 +75,15 @@ namespace SMS.Web.Services
         }
         public async Task<T> GetFromJsonAsync<T>(string path, string? userId)
         {
-            await SetAuthorizeHeader(userId);
-            return await httpClient.GetFromJsonAsync<T>(path);
+            try
+            {
+                await SetAuthorizeHeader(userId);
+                return await httpClient.GetFromJsonAsync<T>(path);
+            }
+            catch (Exception exp)
+            {
+                throw;
+            }
         }
         public async Task<T1> PostAsync<T1, T2>(string path, T2 postModel, string? userId="")
         {

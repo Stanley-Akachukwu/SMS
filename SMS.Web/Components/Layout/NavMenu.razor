@@ -53,16 +53,6 @@
     {
         return new List<MenuGroupDto>
         {
-        // new MenuGroupDto
-        // {
-        //     Section = MenuSection.Home,
-        //     DisplayTitle = "Home",
-        //     Icon = new Icons.Regular.Size20.Home(),
-        //     Items = new List<MenuItemDto>
-        //     {
-        //         new MenuItemDto { Title = "Home", Href = "/", Icon = new Icons.Regular.Size20.Home(), IconColor = Color.Accent }
-        //     }
-        // },
         new MenuGroupDto
         {
             Section = MenuSection.Administration,
@@ -70,7 +60,7 @@
             Tooltip = "Administration",
             Icon = new Icons.Color.Size16.Org(),
             Items = new List<MenuItemDto>
-            {
+            {                
                 new MenuItemDto
                 {
                     Title = "Admission and Enrollment",
@@ -112,9 +102,75 @@
                     Href = "visitor-security",
                     Icon = new Icons.Regular.Size20.ShieldPerson(),
                     IconColor = Color.Accent
-                }
+                } 
             }
         },
+       
+          new MenuGroupDto
+        {
+            Section = MenuSection.Setups,
+            DisplayTitle = "Setups",
+            Tooltip = "Setups",
+            Icon = new Icons.Color.Size16.Toolbox(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Settings",
+                    Href = "/Settings/admin",
+                    Icon = new Icons.Regular.Size20.Settings(),
+                    IconColor = Color.Warning
+                }
+                ,
+                new MenuItemDto
+                {
+                    Title = "Schools",
+                    Href = "/schools",
+                    Icon = new Icons.Regular.Size20.BuildingGovernment(),
+                    IconColor = Color.Warning
+                },
+                new MenuItemDto
+                {
+                    Title = "Classes",
+                    Href = "/classes",
+                    Icon = new Icons.Regular.Size20.GroupList(),
+                    IconColor = Color.Warning
+                },
+                new MenuItemDto
+                {
+                    Title = "Class Units",
+                    Href = "/class-units",
+                    Icon = new Icons.Regular.Size20.BreakoutRoom(),
+                    IconColor = Color.Warning
+                },
+            }
+        },
+        new MenuGroupDto
+        {
+            Section = MenuSection.Security,
+            DisplayTitle = "Security",
+            Tooltip = "Security Administration",
+            Icon = new Icons.Color.Size16.LockClosed(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Roles & Permissions",
+                    Href = "roles",
+                    Icon = new Icons.Regular.Size20.ShieldLock(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Users",
+                    Href = "users",
+                    Icon = new Icons.Regular.Size20.PersonLock(),
+                    IconColor = Color.Accent
+                }
+
+            }
+        },
+        
         new MenuGroupDto
         {
             Section = MenuSection.Academic,
@@ -128,6 +184,7 @@
                 new MenuItemDto { Title = "Exam Scheduling", Href = "exam-schedule", Icon = new Icons.Regular.Size20.Calendar() },
                 new MenuItemDto { Title = "Grading and Report Cards", Href = "grading", Icon = new Icons.Regular.Size20.ClipboardTaskListLtr() },
                 new MenuItemDto { Title = "Academic Calendar", Href = "calendar", Icon = new Icons.Regular.Size20.CalendarLtr() }
+                 
             }
         },
         new MenuGroupDto
@@ -143,6 +200,7 @@
                 new MenuItemDto { Title = "Payment Gateway Integration", Href = "payment-gateway", Icon = new Icons.Regular.Size20.Link() },
                 new MenuItemDto { Title = "Financial Reporting", Href = "financial-reporting", Icon = new Icons.Regular.Size20.Table() },
                 new MenuItemDto { Title = "Student Wallets", Href = "student-wallet", Icon = new Icons.Regular.Size20.Wallet() }
+                
             }
         },
         new MenuGroupDto
@@ -157,6 +215,7 @@
                 new MenuItemDto { Title = "Extracurricular Activities", Href = "activities", Icon = new Icons.Regular.Size20.Star() },
                 new MenuItemDto { Title = "Student Clubs Management", Href = "clubs", Icon = new Icons.Regular.Size20.PeopleTeam() },
                 new MenuItemDto { Title = "Counseling Sessions", Href = "counseling", Icon = new Icons.Regular.Size20.PersonSupport() }
+                 
             }
         },
         new MenuGroupDto
@@ -195,6 +254,7 @@
                     Icon = new Icons.Regular.Size20.ChatHelp(),
                     IconColor = Color.Accent
                 }
+                
             }
         },
         new MenuGroupDto
@@ -233,6 +293,7 @@
                     Icon = new Icons.Regular.Size20.BookPulse(),
                     IconColor = Color.Accent
                 }
+                 
             }
         },
         new MenuGroupDto
@@ -271,6 +332,7 @@
                     Icon = new Icons.Regular.Size20.CalendarClock(),
                     IconColor = Color.Accent
                 }
+                
             }
         },
         new MenuGroupDto
@@ -309,30 +371,7 @@
                     Icon = new Icons.Regular.Size20.MoneyCalculator(),
                     IconColor = Color.Accent
                 }
-            }
-        },
-        new MenuGroupDto
-        {
-            Section = MenuSection.Security,
-            DisplayTitle = "Security",
-            Tooltip = "Security Administration",
-            Icon = new Icons.Color.Size16.LockClosed(),
-            Items = new List<MenuItemDto>
-            {
-                new MenuItemDto
-                {
-                    Title = "Roles & Permissions",
-                    Href = "roles",
-                    Icon = new Icons.Regular.Size20.ShieldLock(),
-                    IconColor = Color.Accent
-                },
-                new MenuItemDto
-                {
-                    Title = "Users",
-                    Href = "users",
-                    Icon = new Icons.Regular.Size20.PersonLock(),
-                    IconColor = Color.Accent
-                }
+                 
             }
         },
         new MenuGroupDto

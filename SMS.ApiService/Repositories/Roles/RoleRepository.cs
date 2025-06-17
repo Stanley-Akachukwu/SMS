@@ -9,13 +9,8 @@ using System.Data;
 
 namespace SMS.ApiService.Repositories.Roles
 {
-    public class RoleRepository : IRoleRepository
+    public class RoleRepository(AppDbContext _dbContext) : IRoleRepository
     {
-        private readonly AppDbContext _dbContext;
-        public RoleRepository(AppDbContext context)
-        {
-            _dbContext = context;
-        }
         private ApiResponse<string> CopyFromExistingRole(string? copyFromRoleId, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
@@ -134,11 +129,6 @@ namespace SMS.ApiService.Repositories.Roles
         {
             try
             {
-                
-                //var allR = _dbContext.RolePermissions.Where(p=>p.RoleId!="System").ToList();
-                //_dbContext.RolePermissions.RemoveRange(allR);
-                //await _dbContext.SaveChangesAsync(cancellationToken);
-
                 var roles = await _dbContext.Roles.ToListAsync(cancellationToken);
                 var roleDtos = roles.Select(role => new RoleDto
                 {

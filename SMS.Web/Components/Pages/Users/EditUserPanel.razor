@@ -37,17 +37,7 @@
         {
             <div style="color:red">Role is required.</div>
         }
-
-        <FluentSelect Id="gender" name="gender" Value="@selectedGenderCode" ValueChanged="@(e => GenderSelectHandler(e))" TOption="string" Height="300px" style="width: 100%;">
-            <FluentOption Value="">Select Gender</FluentOption>
-            <FluentOption Value="M">Male</FluentOption>
-            <FluentOption Value="F">Female</FluentOption>
-        </FluentSelect>
-        @if (string.IsNullOrEmpty(selectedGenderCode))
-        {
-            <div style="color:red">Gender is required.</div>
-        }
-
+        <h6>Department:</h6>
         <FluentSelect Id="department" name="department" Value="@selectedDepartmentId" ValueChanged="@(e => DepartmentSelectHandler(e))" TOption="string" Height="300px" style="width: 100%;">
             <FluentOption Value="">Select Department</FluentOption>
             @foreach (var d in departments)
@@ -61,11 +51,7 @@
         }
     </FluentStack>
 
-    <FluentTextField @bind-Value="@Content.PhoneNumber" style="width: 100%;"><h6>Phone:</h6></FluentTextField>
-    @if (string.IsNullOrEmpty(Content?.PhoneNumber))
-    {
-        <div style="color:red">Phone number is required.</div>
-    }
+   
     <FluentTextField @bind-Value="@Content.UserName" style="width: 100%;"><h6>Email:</h6></FluentTextField>
     @if(string.IsNullOrEmpty(Content?.UserName))
     {
@@ -119,17 +105,13 @@
     {
         RoleDtos = Content.Roles;
         departments = Content.Departments;
-       
-        if (Content.Role != null)
+
+        if (Content.RoleId != null)
         {
-            this.selectedRoleId = Content?.Id!;
+            this.selectedRoleId = Content?.Role?.Id!;
             RoleIDHandler(this.selectedRoleId);
         }
-        if (Content?.Gender != null)
-        {
-            this.selectedGenderCode = Content.Gender;
-            GenderSelectHandler(this.selectedGenderCode);
-        }
+        
         if (Content.DepartmentId != null)
         {
             this.selectedDepartmentId = Content.DepartmentId.ToString();
@@ -154,14 +136,14 @@
             await Task.Delay(1000, token);
             if (Content?.FirstName?.Length > 2 && 
                 Content?.SurName?.Length >2 &&
-                !string.IsNullOrEmpty(selectedGenderCode) && 
+                // !string.IsNullOrEmpty(selectedGenderCode) && 
                 !string.IsNullOrEmpty(selectedDepartmentId) &&
                 !string.IsNullOrEmpty(selectedRoleId)&&
-                 !string.IsNullOrEmpty(Content?.PhoneNumber) &&
+                 // !string.IsNullOrEmpty(Content?.PhoneNumber) &&
             IsValidEmail(Content?.UserName))
             {
                 isValidFrm = false;
-                 StateHasChanged();
+                StateHasChanged();
             }
             else
             {
@@ -177,16 +159,13 @@
 
         try
         {
-            // Normalize the domain
             email = Regex.Replace(email, @"(@)(.+)$", DomainMapper,
                                   RegexOptions.None, TimeSpan.FromMilliseconds(200));
 
-            // Examines the domain part of the email and normalizes it.
             string DomainMapper(Match match)
             {
                 var idn = new IdnMapping();
 
-                // Use IdnMapping class to convert Unicode domain names.
                 string domainName = idn.GetAscii(match.Groups[2].Value);
 
                 return match.Groups[1].Value + domainName;
@@ -220,23 +199,6 @@
     }
     private async Task SaveAsync()
     {
-        //Content.FullName = $"{Content.FirstName} {Content.Surname}";
-       
-
-        // if (!string.IsNullOrEmpty(Content?.Email))
-        // {
-        //     var rsp = await _uersService.CreateUserAsync(Content?.Email);
-        //     if (rsp?.IsSuccess == true && rsp.Data != null)
-        //     {
-        //         Content.IdentityUserId = rsp.Data.UserId;
-        //     }
-        //     else
-        //     {
-        //         CancelAsync();
-        //     }
-        // }
-
-        
         if (string.IsNullOrEmpty(Content?.FirstName) &&
                string.IsNullOrEmpty(Content?.SurName) &&
                string.IsNullOrEmpty(selectedGenderCode) &&
@@ -263,8 +225,9 @@
     {
         if (!string.IsNullOrEmpty(id))
         {
+            var role = RoleDtos.FirstOrDefault(r => r.Id == id);
             this.selectedRoleId = id;            
-            Content.Id = selectedRoleId;
+            Content.RoleId = selectedRoleId;
         }
     }
     private void DepartmentSelectHandler(string id)
@@ -273,14 +236,6 @@
         {
             this.selectedDepartmentId = id;
             Content.DepartmentId = int.Parse(selectedDepartmentId);
-        }
-    }
-    private void GenderSelectHandler(string code)
-    {
-        if (!string.IsNullOrEmpty(code))
-        {
-            this.selectedGenderCode = code;
-            Content.Gender = selectedGenderCode;
         }
     }
 }

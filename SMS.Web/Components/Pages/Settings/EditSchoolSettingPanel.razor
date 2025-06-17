@@ -1,0 +1,127 @@
+﻿@using SMS.Common.Dtos.Schools
+@implements IDialogContentComponent<SchoolSettingDto>
+
+<FluentDialogHeader ShowDismiss="false">
+    <FluentStack VerticalAlignment="VerticalAlignment.Center">
+        <FluentLabel Typo="Typography.PaneHeader">
+            @Dialog.Instance.Parameters.Title
+        </FluentLabel>
+    </FluentStack>
+</FluentDialogHeader>
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+        <FluentTextField @bind-Value="Content.Name" style="width: 100%;" Placeholder="Name"><h6>Name:</h6></FluentTextField>
+        <FluentTextField @bind-Value="Content.Description" style="width: 100%;" Placeholder="Description"><h6>Description:</h6></FluentTextField>
+        <FluentTextField @bind-Value="StartTimeText" style="width: 100%;" Placeholder="Start Time"><h6>Start Time:</h6></FluentTextField>
+        <FluentTextField @bind-Value="BreakStartTimeText" style="width: 100%;" Placeholder="Break Start Time"><h6>Break Start Time:</h6></FluentTextField>
+        <FluentTextField @bind-Value="BreakEndTimeText" style="width: 100%;" Placeholder="Break End Time"><h6>Break End Time:</h6></FluentTextField>
+        <FluentTextField @bind-Value="DismissalTimeText" style="width: 100%;" Placeholder="Dismissal Time"><h6>Dismissal Time:</h6></FluentTextField>
+        <FluentTextField @bind-Value="MidTermBreakText" style="width: 100%;" Placeholder="Mid Term Break"><h6>Mid Term Break:</h6></FluentTextField>
+
+    </FluentStack>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Save())" OnClick="@SaveAsync">Save</FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="@CancelAsync">Cancel</FluentButton>
+</FluentDialogFooter>
+
+@code {
+    [Parameter]
+    public SchoolSettingDto Content { get; set; } = new();
+
+    [CascadingParameter]
+    public FluentDialog Dialog { get; set; } = default!;
+
+    private string StartTimeText
+    {
+        get => Content.ClassStartTime?.ToString(@"hh\:mm") ?? string.Empty;
+        set
+        {
+            if (TimeSpan.TryParse(value, out var result))
+            {
+                Content.ClassStartTime = result;
+            }
+            else
+            {
+                Content.ClassStartTime = null; // or keep previous value
+            }
+        }
+    }
+    private string BreakEndTimeText
+    {
+        get => Content.BreakEndTime?.ToString(@"hh\:mm") ?? string.Empty;
+        set
+        {
+            if (TimeSpan.TryParse(value, out var result))
+            {
+                Content.BreakEndTime = result;
+            }
+            else
+            {
+                Content.BreakEndTime = null; // or keep previous value
+            }
+        }
+    }
+    private string BreakStartTimeText
+    {
+        get => Content.BreakStartTime?.ToString(@"hh\:mm") ?? string.Empty;
+        set
+        {
+            if (TimeSpan.TryParse(value, out var result))
+            {
+                Content.BreakStartTime = result;
+            }
+            else
+            {
+                Content.BreakStartTime = null; // or keep previous value
+            }
+        }
+    }
+    private string DismissalTimeText
+    {
+        get => Content.DismissalTime?.ToString(@"hh\:mm") ?? string.Empty;
+        set
+        {
+            if (TimeSpan.TryParse(value, out var result))
+            {
+                Content.DismissalTime = result;
+            }
+            else
+            {
+                Content.DismissalTime = null; // or keep previous value
+            }
+        }
+    }
+    private string MidTermBreakText
+    {
+        get => Content.MidTermBreak?.ToString("yyyy-MM-dd") ?? string.Empty;
+        set
+        {
+            if (DateOnly.TryParse(value, out var parsedDate))
+            {
+                Content.MidTermBreak = parsedDate;
+            }
+            else
+            {
+                Content.MidTermBreak = null;
+            }
+        }
+    }
+   
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Content.Name))
+        {
+            // Show validation error
+            return;
+        }
+        await Dialog.CloseAsync(Content);
+    }
+
+    private async Task CancelAsync()
+    {
+        await Dialog.CancelAsync();
+    }
+}

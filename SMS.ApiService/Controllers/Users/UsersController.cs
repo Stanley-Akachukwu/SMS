@@ -4,17 +4,12 @@ using SMS.ApiService.Repositories.Users;
 using SMS.Common.Dtos.Users;
 
 
-namespace SMS.ApiService.Controllers.Users
+namespace SMS.ApiService.Controllers.Users   
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UsersController(IUserRepository _repository) : ControllerBase
     {
-        private readonly IUserRepository _repository;
-        public UsersController(IUserRepository repository)
-        {
-            _repository = repository;   
-        }
 
         [HttpGet("info/{email}")]
         [Authorize]

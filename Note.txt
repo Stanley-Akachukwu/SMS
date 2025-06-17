@@ -14,3 +14,10 @@ chika.iheme@gmail.com   1yR5!9of
 UserRepository.CreateOrUpdateUserAsync:  https://localhost:7220/api/auth/register
 
 SMSCore.Common.Authorization.PermissionHandler.GetRolePermissionsAsync:  https://localhost:7220/api/Roles/permissions/{id}
+
+
+
+
+
+---------Reresh Token--------: 
+https://www.youtube.com/watch?v=E-V3hN5Zptc

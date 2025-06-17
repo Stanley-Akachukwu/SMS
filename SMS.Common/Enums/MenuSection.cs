@@ -14,6 +14,7 @@
         Hostel =9,
         Security =10,
         ITSupport =11,
-        Alumni =12
+        Alumni =12,
+        Setups = 13,
     }
 }

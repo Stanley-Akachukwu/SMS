@@ -47,9 +47,9 @@ namespace SMS.ApiService.Repositories.Auths
 
         public async Task<ApiResponse<User?>> RegisterAsync(UserDto request)
         {
-            if (await context.Users.AnyAsync(u => u.Email == request.UserName))
+            if (!await context.Roles.AnyAsync(u => u.Id == request.RoleId))
             {
-                return ApiResponse<User?>.Failure("User was not found", StatusCodes.Status500InternalServerError);
+                return ApiResponse<User?>.Failure("Role assigned to user was not found", StatusCodes.Status500InternalServerError);
             }
 
             var user = new User();
@@ -57,20 +57,21 @@ namespace SMS.ApiService.Repositories.Auths
             var hashedPassword = new PasswordHasher<User>()
                 .HashPassword(user, password);
 
+            
             user.Id = Ulid.NewUlid().ToString();
             user.Email = request?.UserName!;
             user.PasswordHash = hashedPassword;
             user.DateCreated = DateTime.UtcNow;
             user.Description = "System User";
-            user.RoleId = request?.Id;
+            user.RoleId = request?.RoleId;
             user.DepartmentId = request?.DepartmentId;
             user.Email = request?.UserName!;
             user.FirstName = request?.FirstName;
             user.MiddleName = request?.MiddleName;
             user.SurName = request?.SurName;
             user.DateUpdated = DateTime.UtcNow;
-            user.UpdatedByUserId = "System";
-            //user.UserProfileId = Ulid.NewUlid().ToString();
+            user.UpdatedByUserId = request?.CreatedByUserId?? "System";
+            user.CreatedByUserId = request?.CreatedByUserId ?? "System";
 
             context.Users.Add(user);
             await context.SaveChangesAsync();

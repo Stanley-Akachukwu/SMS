@@ -5,7 +5,11 @@ using Scalar.AspNetCore;
 using SMS.ApiService.BackgroundServices;
 using SMS.ApiService.Extensions;
 using SMS.ApiService.Repositories.Auths;
+using SMS.ApiService.Repositories.ClassUnits;
 using SMS.ApiService.Repositories.Roles;
+using SMS.ApiService.Repositories.SchoolClasses;
+using SMS.ApiService.Repositories.Schools;
+using SMS.ApiService.Repositories.Settings;
 using SMS.ApiService.Repositories.Users;
 using SMS.Common.Authorization;
 using SMS.Common.Enums;
@@ -49,6 +53,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddSingleton<IPermissionService, PermissionService>();
     builder.Services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
+    builder.Services.AddScoped<IClassSettingsRepository, ClassSettingsRepository>();
+    builder.Services.AddScoped<IFeesSettingRepository, FeesSettingRepository>();
+    builder.Services.AddScoped<ISchoolSettingsRepository, SchoolSettingsRepository>();
+    builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
+    builder.Services.AddScoped<ISchoolClassRepository, SchoolClassRepository>();
+    builder.Services.AddScoped<IClassUnitRepository, ClassUnitRepository>();
+
+
 
     builder.Services.AddAuthorization(options =>
     {
@@ -76,7 +88,8 @@ app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+        app.UseDeveloperExceptionPage();
+        app.MapOpenApi();
     //navigate to: https://localhost:7386/scalar/
     app.MapScalarApiReference(options =>
     {

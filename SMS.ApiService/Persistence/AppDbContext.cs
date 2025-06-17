@@ -1,8 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SMS.ApiService.Converters;
+using SMS.ApiService.Entities.ClassUnits;
 using SMS.ApiService.Entities.Departments;
 using SMS.ApiService.Entities.Roles;
+using SMS.ApiService.Entities.SchoolClasses;
+using SMS.ApiService.Entities.Schools;
+using SMS.ApiService.Entities.Settings;
 using SMS.ApiService.Entities.Users;
 
 namespace SMS.ApiService.Persistence
@@ -16,6 +20,13 @@ namespace SMS.ApiService.Persistence
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Department> Departments { get; set; }
+        public DbSet<SchoolSetting> SchoolSettings { get; set; }
+        public DbSet<ClassSetting> ClassSettings { get; set; }
+        public DbSet<FeesSetting> FeesSettings { get; set; }
+        public DbSet<FeesSettingBreakdown> FeesSettingBreakdowns { get; set; }
+        public DbSet<School> Schools { get; set; }
+        public DbSet<SchoolClass> SchoolClasses { get; set; }
+        public DbSet<ClassUnit> ClassUnits { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

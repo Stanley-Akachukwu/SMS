@@ -9,6 +9,6 @@ namespace SMS.ApiService.Entities.Departments
         [MaxLength(128)]
         public string? Name { get; set; }
         public MenuSection MenuSectionMap { get; set; }
-        public ICollection<User>? Users { get; set; }
+        public ICollection<User>? Users { get; set; } = new List<User>();
     }
 }

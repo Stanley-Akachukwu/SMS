@@ -75,15 +75,8 @@ namespace SMS.ApiService.Controllers.Roles
 
     [Route("api/[controller]")]
     [ApiController]
-    public class RolesController : ControllerBase
+    public class RolesController(IRoleRepository _repository) : ControllerBase
     {
-        private readonly IRoleRepository _repository;
-        public RolesController(IRoleRepository repository)
-        {
-            _repository = repository;
-        }
-
-
         [Authorize]
         [HasPermission(Permission.CanUpdatePermisions)]
 

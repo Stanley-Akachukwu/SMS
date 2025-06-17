@@ -1,0 +1,180 @@
+﻿@page "/Settings/{section}"
+
+@{
+#pragma warning disable CS0618
+}
+
+@using System.Text;
+@using SMS.Common.Enums
+<FluentLayout Style="margin-top: 10px;margin-bottom: 1px;">
+    <FluentCard MinimalStyle="true">
+        <FluentStack Orientation="Orientation.Horizontal" Width="100%">
+            <div>
+                <FluentStack Orientation="Orientation.Horizontal" Width="100%">
+
+                    <div>
+                        <FluentStack Orientation="Orientation.Vertical" Width="100%">
+                            <FluentNavMenuTree  Title="Custom actions demo">
+
+
+                                @foreach (var grp in SettingsCategories)
+                                {
+                                    <FluentNavMenuGroup Id="@grp.Id" Text="@grp.Name" Icon="@(keyValuePairs["GroupList"])">
+                                        @foreach (var item in grp.Items)
+                                        {
+                                            <FluentNavMenuLink Id="@item.Id" Text="@item.Name" Icon="@(keyValuePairs["TapSingle"])" OnAction="@ShowSelectedComponent" />
+                                        }
+                                    </FluentNavMenuGroup>
+                                }
+                            </FluentNavMenuTree>
+
+                        </FluentStack>
+                    </div>
+                    <div style="width: 100%;">
+                        @switch (SelectedSection)
+                        {
+                            case ComponentSection.Schools:
+                                <SchoolSettingGrid />
+                                break;
+                            case ComponentSection.Classes:
+                                <ClassSettingGrid />
+                                break;
+                            case ComponentSection.FeeStructures:
+                                <FeesSettingGrid />
+                                break;
+                            case ComponentSection.ClassUnits:
+                                <ClassUnitSettingGrid />
+                                break;
+                            case ComponentSection.TimeTables:
+                                <TimeTableSettingGrid />
+                                break;
+                            case ComponentSection.Discounts:
+                                <FeesDiscountSettingGrid />
+                                break;
+                        }
+                    </div>
+                </FluentStack>
+            </div>
+        </FluentStack>
+    </FluentCard>
+
+ </FluentLayout>
+
+
+
+@code
+{
+    [Parameter]
+    public string? section { get; set; }
+    bool _hideDialog = true;
+    StringBuilder _output = new();
+    private Icon icv =new  Icons.Regular.Size24.EarthLeaf();
+    public Dictionary<string, Icon> keyValuePairs = new Dictionary<string, Icon>
+    {
+        { "GroupList", new Icons.Regular.Size24.GroupList() },
+        { "TapSingle", new Icons.Regular.Size24.TapSingle() },
+    };
+    public List<SMSSettingSectionDto> SettingsCategories { get; set; } = new List<SMSSettingSectionDto>();
+    private List<SMSSettingDto> SMSSettings { get; set; } = new List<SMSSettingDto>();
+    public ComponentSection SelectedSection { get; set; } = ComponentSection.Schools;
+    protected override async Task OnInitializedAsync()
+    {
+        SettingsCategories = GetSettingItems();
+        if(SettingsCategories != null)
+        {
+            SMSSettings = SettingsCategories.SelectMany(section => section.Items).ToList();
+        }
+    }
+
+    void ShowSelectedComponent(NavMenuActionArgs args)
+    {
+        var itemId = args.Target.Id;
+        var item = SMSSettings.FirstOrDefault(x => x.Id == itemId);
+        SelectedSection = item?.DisplayComponent ?? ComponentSection.None;
+        args.SetHandled();
+    }
+    private List<SMSSettingSectionDto> GetSettingItems()
+    {
+           return new List<SMSSettingSectionDto>
+             {
+            new SMSSettingSectionDto
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "Academic",
+                Items = new List<SMSSettingDto>
+                {
+                    new SMSSettingDto
+                    {
+                        Id =  Guid.NewGuid().ToString(),
+                        Name = "Schools",
+                        ParentId = 0,
+                        DisplayComponent = ComponentSection.Schools
+                    },
+                    new SMSSettingDto
+                    {
+                        Id =  Guid.NewGuid().ToString(),
+                        Name = "Classes",
+                        ParentId = 0,
+                        DisplayComponent =ComponentSection.Classes
+                    },
+                    new SMSSettingDto
+                    {
+                        Id =  Guid.NewGuid().ToString(),
+                        Name = "Class Units",
+                        ParentId = 0,
+                        DisplayComponent = ComponentSection.ClassUnits
+                    },
+                    new SMSSettingDto
+                    {
+                        Id =  Guid.NewGuid().ToString(),
+                        Name = "Time Tables",
+                        ParentId = 0,
+                        DisplayComponent = ComponentSection.TimeTables
+                    }
+                }
+            },
+            new SMSSettingSectionDto
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "Finance",
+                Items = new List<SMSSettingDto>
+                {
+                    new SMSSettingDto
+                    {
+                        Id =  Guid.NewGuid().ToString(),
+                        Name = "Fee Structures",
+                        ParentId = 0,
+                        DisplayComponent = ComponentSection.FeeStructures
+                    },
+                    new SMSSettingDto
+                    {
+                        Id =  Guid.NewGuid().ToString(),
+                        Name = "Discount Rules",
+                        ParentId = 0,
+                        DisplayComponent =ComponentSection.Discounts
+                    }
+                }
+            } 
+        };
+    }
+}
+
+@code {
+
+    public class SMSSettingSectionDto
+    {
+        public string? Id { get; set; }
+        public string? Name { get; set; }
+        public MenuSection MenuSection { get; set; }
+
+        public ICollection<SMSSettingDto> Items { get; set; } = new List<SMSSettingDto>();
+    }
+    public class SMSSettingDto
+    {
+        public string? Id { get; set; }
+        public string? Name { get; set; }
+        public int ParentId { get; set; }
+        public ComponentSection DisplayComponent { get; set; }
+    }
+
+}

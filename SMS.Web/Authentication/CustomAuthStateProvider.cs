@@ -32,7 +32,7 @@ namespace SMS.Web.Authentication
                 return new AuthenticationState(user);
             }
         }
-
+       
         public async Task MarkUserAsAuthenticated(TokenResponseDto model)
         {
             var json = JsonSerializer.Serialize(model);

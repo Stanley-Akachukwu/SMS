@@ -28,6 +28,7 @@ namespace SMS.ApiService.Repositories.Users
                     user = rsp.Data;
                 }
 
+
                 var role = await _dbContext.Roles
                     .FirstOrDefaultAsync(r => r.Id == userDto.RoleId, cancellationToken);
 
@@ -51,8 +52,9 @@ namespace SMS.ApiService.Repositories.Users
                 user.MiddleName = userDto?.MiddleName;
                 user.SurName = userDto?.SurName;
                 user.DateUpdated = DateTime.UtcNow;
-                user.UpdatedByUserId = "System";  
+                user.UpdatedByUserId = userDto.CreatedByUserId ?? "System";  
                 user.Description = userDto?.Description!;
+                user.IsDeleted = false;  
                 _dbContext.Users.Update(user);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -148,16 +150,22 @@ namespace SMS.ApiService.Repositories.Users
 
         public async Task<ApiResponse<string>> DeleteUserAsync(string id, CancellationToken cancellationToken)
         {
-            //Soft delete user
             var user = await _dbContext.Users
                  .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user!=null)
             {
                 user.IsDeleted = true;
+                user.DateUpdated = DateTime.UtcNow;
+                user.Email = string.Empty; 
+                user.IsActive = false;
+                user.PasswordHash = string.Empty; 
+                user.FirstName = string.Empty;
+                user.SurName = string.Empty;
                 _dbContext.Users.Update(user);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
             return ApiResponse<string>.Success("User deleted successfully", StatusCodes.Status200OK);
         }
+
     }
 }
