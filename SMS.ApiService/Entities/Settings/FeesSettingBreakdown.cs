@@ -3,6 +3,7 @@ namespace SMS.ApiService.Entities.Settings
 {
     public class FeesSettingBreakdown : BaseEntity<string>
     {
+        [MaxLength(128)]
         public string? Name { get; set; }
         public decimal Amount { get; set; }
         [MaxLength(150)]

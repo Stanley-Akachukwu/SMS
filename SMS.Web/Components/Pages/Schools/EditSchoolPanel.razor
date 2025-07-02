@@ -10,8 +10,8 @@
 </FluentDialogHeader>
 <FluentDialogBody>
     <FluentStack Orientation="Orientation.Vertical" Width="100%">
-        <FluentTextField @bind-Value="Content.Name" style="width: 100%;" Placeholder="School Name" />
-        <FluentTextField @bind-Value="Content.Description" style="width: 100%;" Placeholder="Description" />
+        <FluentTextField @bind-Value="Content.Name" style="width: 100%;" Placeholder="School Name"><h6>School Name:</h6></FluentTextField>
+        <FluentTextField @bind-Value="Content.Description" style="width: 100%;" Placeholder="Description"><h6>Description:</h6></FluentTextField>
 
         <h6>Setting:</h6>
         <FluentSelect Id="role" name="role" Value="@selectedSettingId" ValueChanged="@(e => SettingIDHandler(e))" TOption="string" Height="300px" style="width: 100%;">

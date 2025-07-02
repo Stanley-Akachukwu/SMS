@@ -1,0 +1,166 @@
+﻿@page "/entrance-workflows"
+
+
+@using SMS.Common.Dtos.Workflows
+@using SMS.Common.Enums
+@using SMS.Common.Helpers
+@using SMS.Web.Components.Shared
+@using SMS.Web.Services.Toasts
+
+<FluentLayout Style="margin-top: 10px;">
+    <FluentHeader>
+        <h3>Workflows</h3>
+        <FluentSpacer />
+        <FluentButton IconStart="@(new Icons.Regular.Size16.Add())" OnClick="@AddNew">Add</FluentButton>
+    </FluentHeader>
+
+    <FluentStack Orientation="Orientation.Vertical" Width="100%">
+        @if (loading)
+        {
+            <Progress />
+        }
+        else if (Workflows != null)
+        {
+            <FluentDataGrid Items="Workflows!.AsQueryable()" RowSize="DataGridRowSize.Small" AutoItemsPerPage="true" Style="overflow-y:hidden;">
+                <PropertyColumn Property="@(c => c.Name)" Title="Name" Sortable="true" />
+                <PropertyColumn Property="@(c => c.RegLink)" Title="Reg. Link" Sortable="true" />
+                <PropertyColumn Property="@(c => c.Description)" Title="Description" Sortable="true" />
+                <PropertyColumn Property="@(c => c.Session!)" Title="Session" Sortable="true" />
+                <PropertyColumn Property="@(c => c.WorkflowType!)" Title="WorkflowType" Sortable="true" />
+                <TemplateColumn Title="Actions">
+                    <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditWorkflow(context))" />
+                    <FluentButton IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteWorkflow(context))" />
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentStack>
+</FluentLayout>
+
+@code {
+    [Inject] private SMSApiClient SMSApiClient { get; set; }
+    [Inject] private NavigationManager _navigation { get; set; }
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+    [Inject] IDialogService _dialogService { get; set; }
+    [Inject] private IUserAuthState _userAuthState { get; set; }
+
+    private List<WorkflowDto>? Workflows;
+    private bool loading = false;
+    public SMSCoreAction Action { get; set; }
+    string currentUser = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loading = true;
+            var loadDataTask = LoadData();
+            var getCurrentUserTask = GetCurrentUser();
+            await Task.WhenAll(loadDataTask, getCurrentUserTask);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<WorkflowDto>>>("/api/workflows", null);
+        if (rsp?.IsSuccess == true && rsp.Data != null)
+        {
+            Workflows = rsp.Data.ToList();
+        }
+        else
+        {
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+        loading = false;
+    }
+
+    private async Task GetCurrentUser()
+    {
+        currentUser = await _userAuthState.GetCurrentUser();
+    }
+
+    private async Task AddNew()
+    {
+        var wkfl = new WorkflowDto()
+            {
+                Action = SMSCoreAction.Create,
+            };
+        var dialog = await _dialogService.ShowPanelAsync<EditWorkflowPanel>(wkfl, new() { Title = "Add Workflow" });
+        var dialogResult = await dialog.Result;
+        await HandleEditWorkflowDialogResult(dialogResult, wkfl);
+    }
+
+    private async Task EditWorkflow(WorkflowDto wkfl)
+    {
+         
+        wkfl.Action = SMSCoreAction.Edit;
+        var dialog = await _dialogService.ShowPanelAsync<EditWorkflowPanel>(wkfl, new() { Title = "Edit Workflow" });
+        var dialogResult = await dialog.Result;
+        await HandleEditWorkflowDialogResult(dialogResult, wkfl);
+    }
+    private async Task HandleEditWorkflowDialogResult(DialogResult result, WorkflowDto wkfl)
+    {
+        if (result.Cancelled)
+        {
+            return;
+        }
+        loading = true;
+
+        string message, actionTitle = string.Empty;
+
+        if (wkfl.Action == SMSCoreAction.Create)
+        {
+            actionTitle = "Workflow Setup";
+            message = "Unit created successfully!";
+        }
+        else
+        {
+            actionTitle = "Workflow Update";
+            message = "Workflow updated successfully!";
+        }
+        wkfl.CreatedByUserId = currentUser;
+       
+
+        var rsp = await SMSApiClient.PostAsync<ApiResponse<string>, WorkflowDto>("/api/workflows", wkfl);
+
+        if (rsp?.IsSuccess == true && result.Data != null && rsp?.StatusCode != StatusCodes.Status500InternalServerError)
+        {
+            loading = false;
+            await LoadData();
+
+            _toastService.ShowToastMessage(actionTitle, message, Color.Success, ToastIntent.Success);
+        }
+        else
+        {
+            loading = false;
+            await LoadData();
+            _toastService.ShowToastMessage(actionTitle, rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        }
+    }
+    private async Task DeleteWorkflow(WorkflowDto wkfl)
+    {
+        var dialog = await _dialogService.ShowConfirmationAsync(
+            $"Are you sure you want to delete '{wkfl.Name}'?",
+            "Yes", "No", "Delete Workflow?");
+        var result = await dialog.Result;
+        if (result.Cancelled)
+            return;
+
+        _toastService.ShowToastMessage("Error", "Not yet implemented.", Color.Warning, ToastIntent.Warning);
+
+
+        // var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/classunits/{classUnit.Id}");
+        // if (rsp?.IsSuccess == true)
+        // {
+        //     await LoadData();
+        //     ToastService.ShowToastMessage("Class Unit", "Deleted successfully!", Color.Success, ToastIntent.Success);
+        // }
+        // else
+        // {
+        //     ToastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        // }
+    }
+}

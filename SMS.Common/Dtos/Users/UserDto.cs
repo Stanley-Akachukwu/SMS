@@ -27,5 +27,6 @@ namespace SMS.Common.Dtos.Users
         public SMSCoreAction Action { get; set; }
         public List<RoleDto>? Roles { get; set; } = new();
         public List<DepartmentDto> Departments { get; set; } = new List<DepartmentDto>();
+         
     }
 }

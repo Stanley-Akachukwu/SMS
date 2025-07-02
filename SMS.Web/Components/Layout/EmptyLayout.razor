@@ -1,12 +1,49 @@
 ﻿@inherits LayoutComponentBase
- 
 
 <FluentLayout>
     <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
-        <FluentBodyContent Class="body-content">
+        <div style="width:70%; padding: 2rem; background-color: #f3f6fb; border-right: 1px solid #e0e0e0;">
+            <div style="margin-bottom: 1.5rem;">
+                <h2 style="color: #23408e; margin-bottom: 0.5rem;">Important Notice</h2>
+                <p style="color: #4a4a4a; font-size: 1.1rem;">
+                    Welcome to our School Management System! Here are the latest updates and important information for visitors:
+                </p>
+            </div>
+            <ul style="list-style: disc; padding-left: 1.5rem; color: #333;">
+                <li>
+                    <strong>Admissions Open:</strong> Applications for the 2024-2025 academic year are now being accepted:
+                    <FluentAnchor Href="/entrance-registration">
+                        Click Here to Register
+                    </FluentAnchor>
+                </li>
+                <li>
+                    <strong>Upcoming Events:</strong> Parent-Teacher Meeting on July 15th, 2024.
+                </li>
+                <li>
+                    <strong>Contact Us:</strong> For inquiries, email <a href="mailto:info@school.edu" style="color: #23408e;">info@school.edu</a> or call (123) 456-7890.
+                </li>
+                <li>
+                    <strong>Office Hours:</strong> Monday to Friday, 8:00 AM - 4:00 PM.
+                </li>
+                <li>
+                    <strong>COVID-19 Guidelines:</strong> Please follow all safety protocols when visiting the campus.
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content Section (30%) -->
+        <FluentBodyContent Class="body-content" Style="width:30%; min-width:320px;">
             <div class="content">
                 @Body
             </div>
         </FluentBodyContent>
     </FluentStack>
 </FluentLayout>
+
+@code {
+    // @inject NavigationManager Navigation
+    // private async Task NavigateToRegister()
+    // {
+    //     Navigation.NavigateTo("/entrance-registration", true);
+    // }
+}

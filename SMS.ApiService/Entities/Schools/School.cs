@@ -8,7 +8,7 @@ namespace SMS.ApiService.Entities.Schools
     public class School : BaseEntity<string>
     {
         [Required]
-        [MaxLength(100)]
+        [MaxLength(128)]
         public string? Name { get; set; }
         public string? SettingId { get; set; }
         public SchoolSetting Setting { get; set; } = new();

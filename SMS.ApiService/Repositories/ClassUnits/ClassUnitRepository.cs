@@ -1,14 +1,65 @@
 ﻿
 
 using Microsoft.EntityFrameworkCore;
+using SMS.ApiService.Entities.ClassUnits;
 using SMS.ApiService.Persistence;
 using SMS.Common.Dtos;
 using SMS.Common.Dtos.Schools;
+using System;
 
 namespace SMS.ApiService.Repositories.ClassUnits
 {
     public class ClassUnitRepository(AppDbContext _dbContext) : IClassUnitRepository
     {
+        public async Task<ApiResponse<string>?> CreateOrUpdateClassUnitAsync(ClassUnitDto dto, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var unit = await _dbContext.ClassUnits
+                    .FirstOrDefaultAsync(u => u.Id == dto.Id, cancellationToken);
+
+                string action = "created";
+                int statusCode = StatusCodes.Status201Created;
+                if (unit == null)
+                {
+                    action = "created";
+                    statusCode = StatusCodes.Status201Created;
+                    unit = new ClassUnit
+                    {
+                       Id = Ulid.NewUlid().ToString(),
+                       Name = dto.Name,
+                       SchoolClassId = dto.ClassId,
+                        Description = dto.Description,
+                        IsActive = true,
+                        DateCreated = DateTime.UtcNow,
+                        DateUpdated = DateTime.UtcNow,
+                        CreatedByUserId = dto.CreatedByUserId ?? "Unknown User",
+                        UpdatedByUserId = dto.CreatedByUserId ?? "Unknown User",
+
+                    };
+                    _dbContext.ClassUnits.Add(unit);
+                }
+                else
+                {
+                    action = "updated";
+                    statusCode = StatusCodes.Status200OK;
+                    unit.Name = dto.Name;
+                    unit.SchoolClassId = dto.ClassId;
+                    unit.IsActive = true;
+                    unit.DateUpdated = DateTime.UtcNow;
+                    unit.CreatedByUserId = dto.CreatedByUserId ?? "Unknown User";
+                    unit.UpdatedByUserId = dto.CreatedByUserId ?? "Unknown User";
+                    _dbContext.ClassUnits.Update(unit);
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return ApiResponse<string>.Success($"Successfully {action}", statusCode);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.Failure(ex.Message, StatusCodes.Status500InternalServerError);
+            }
+        }
         public async Task<ApiResponse<IEnumerable<ClassUnitDto>>?> GetClassUnitsAsync(CancellationToken cancellationToken)
         {
             try
@@ -19,14 +70,17 @@ namespace SMS.ApiService.Repositories.ClassUnits
                     {
                         Id = u.Id,
                         Name = u.Name,
-                        SchoolClassId = u.SchoolClassId,
-                        SchoolClass = u.SchoolClass == null ? null : new SchoolClassDto
+                        ClassId = u.SchoolClassId,
+                        ClassName = u.SchoolClass.Name,
+                        Description = u.Description,
+                        //CodeName = ,
+                        //Size = u.Size,
+                        Class = u.SchoolClass == null ? null : new SchoolClassDto
                         {
                             Id = u.SchoolClass.Id,
                             Name = u.SchoolClass.Name,
                             SchoolId = u.SchoolClass.SchoolId
                         }
-                        // Add other properties as needed
                     })
                     .ToListAsync(cancellationToken);
 
@@ -49,8 +103,8 @@ namespace SMS.ApiService.Repositories.ClassUnits
                     {
                         Id = u.Id,
                         Name = u.Name,
-                        SchoolClassId = u.SchoolClassId,
-                        SchoolClass = u.SchoolClass == null ? null : new SchoolClassDto
+                        ClassId = u.SchoolClassId,
+                        Class = u.SchoolClass == null ? null : new SchoolClassDto
                         {
                             Id = u.SchoolClass.Id,
                             Name = u.SchoolClass.Name,
@@ -82,7 +136,7 @@ namespace SMS.ApiService.Repositories.ClassUnits
                     return ApiResponse<ClassUnitDto>.Failure("Class unit not found.", StatusCodes.Status404NotFound);
 
                 unit.Name = dto.Name;
-                unit.SchoolClassId = dto.SchoolClassId;
+                unit.SchoolClassId = dto.ClassId;
                 // Update other properties as needed
 
                 await _dbContext.SaveChangesAsync(cancellationToken);
@@ -91,7 +145,7 @@ namespace SMS.ApiService.Repositories.ClassUnits
                 {
                     Id = unit.Id,
                     Name = unit.Name,
-                    SchoolClassId = unit.SchoolClassId
+                 ClassId = unit.SchoolClassId
                     // Add other properties as needed
                 };
 
@@ -120,7 +174,7 @@ namespace SMS.ApiService.Repositories.ClassUnits
                 {
                     Id = unit.Id,
                     Name = unit.Name,
-                    SchoolClassId = unit.SchoolClassId
+                     ClassId = unit.SchoolClassId
                     // Add other properties as needed
                 };
 

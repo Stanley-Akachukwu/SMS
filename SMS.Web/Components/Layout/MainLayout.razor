@@ -1,17 +1,65 @@
 ﻿@using SMS.Web.Components.Shared
 @inherits LayoutComponentBase
+<style>
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
 
+    .dropbtn {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        padding: 8px;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+        z-index: 1;
+        border-radius: 4px;
+    }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+            .dropdown-content a:hover {
+                background-color: #f1f1f1;
+            }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+</style>
     <AuthorizeView>
         <Authorized>
             <FluentLayout>
-                <FluentHeader>
-                    SMSCore
-                    <FluentSpacer />
-                    <a href="authentication/profile">Hello, @context.User.Identity?.Name!</a>
-                <a href="/logout">LogOut</a>
-                    <AntiforgeryToken /> 
-                </FluentHeader>
+               
+            <FluentHeader>
+                SMSCore
+                <FluentSpacer />
 
+                <!-- Dropdown Menu -->
+                <div class="dropdown">
+                    <a class="dropbtn">Hello, @context.User.Identity?.Name!</a>
+                    <div class="dropdown-content">
+                        <a href="authentication/profile">Profile</a>
+                        <a href="/logout">Log out</a>
+                    </div>
+                </div>
+
+                <AntiforgeryToken />
+            </FluentHeader>
                 <FluentStack Class="main" Orientation="Orientation.Horizontal" Width="100%">
                     <NavMenu />
                     <FluentBodyContent Class="body-content">

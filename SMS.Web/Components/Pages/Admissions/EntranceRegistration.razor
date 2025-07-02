@@ -1,0 +1,148 @@
+﻿@page "/entrance-registration"
+
+@using System.ComponentModel.DataAnnotations
+
+@layout EmptyLayout
+
+@rendermode InteractiveServer
+@attribute [OutputCache(Duration = 5)]
+
+
+<FluentCard Width="400px" Height="400px">
+    <FluentHeader Class="card-header" style="margin-bottom: 16px;">
+        <h3>Pupil Registration</h3>
+        <FluentSpacer />
+        <FluentNavLink Href="admission-enrollment" Icon="@(new Icons.Regular.Size20.PersonAdd())" IconColor="Color.Success"></FluentNavLink>
+    </FluentHeader>
+    <FluentEditForm Model="@registrationModel" OnValidSubmit="InitiatePayment" FormName="RegForm" style="margin-top: 24px;">
+    <h4>Pupil’s Name</h4>
+    <FluentTextField @bind-Value="registrationModel.PupilName" TextFieldType="TextFieldType.Text" Spellcheck="true" style="width: 100%;" Placeholder="Pupil Name" />
+
+    <h4>Parent Name</h4>
+    <FluentTextField @bind-Value="registrationModel.ParentName" TextFieldType="TextFieldType.Text" style="width: 100%; margin-bottom: 16px;" Placeholder="Parent Name" />
+
+    <h4>Date of Birth</h4>
+    <FluentDatePicker @bind-Value="registrationModel.DateOfBirth" Placeholder="Select Date of Birth" style="width: 100%;" />
+
+    <h4>Gender</h4>
+        <FluentSelect Id="role" name="role" Value="@selectedGenderCode" ValueChanged="@(e => GenderHandler(e))" TOption="string" Height="300px" style="width: 100%;">
+            <FluentOption Value="">Select Gender</FluentOption>
+            <FluentOption Value="Male">Male</FluentOption>
+            <FluentOption Value="Female">Female</FluentOption>
+            <FluentOption Value="Other">Other</FluentOption>
+        </FluentSelect>
+
+
+    <h4>Parent Email</h4>
+    <FluentTextField @bind-Value="registrationModel.ParentEmail" TextFieldType="TextFieldType.Email" style="width: 100%;" Placeholder="Parent Email" />
+
+    <h4>Parent Phone Number</h4>
+    <FluentTextField @bind-Value="registrationModel.ParentPhone" TextFieldType="TextFieldType.Tel" style="width: 100%;" Placeholder="Parent Phone Number" />
+
+    <h4>Address</h4>
+    <FluentTextArea @bind-Value="registrationModel.Address" Placeholder="Parent Address" style="width: 100%;" />
+
+    <h4>Intended Class</h4>
+    <FluentTextField @bind-Value="registrationModel.IntendedClass" TextFieldType="TextFieldType.Text" style="width: 100%;" Placeholder="Intended Class" />
+
+    <FluentTextField Value="@feeDisplay" Disabled="true" style="width: 100%; margin-top: 10px;" Placeholder="Class Fee" />
+
+    <FluentDivider Orientation="Orientation.Horizontal" style="margin: 20px 0;" />
+
+    <h4>Payment Section</h4>
+    <FluentTextField Value="@feeDisplay" Disabled="true" style="width: 100%;" Placeholder="Amount" />
+
+        <FluentDivider Orientation="Orientation.Horizontal" /> <br />  <br />
+
+    <FluentStack HorizontalAlignment="HorizontalAlignment.Center">
+            <FluentButton Type="ButtonType.Submit" style="width: 80%;" Appearance="Appearance.Accent" disabled="@isProcessing">
+                @if (isProcessing)
+                {
+                    <span>Processing...</span>
+                }
+                else
+                {
+                    <span>Pay with Paystack</span>
+                }
+            </FluentButton>
+            
+            @if (!string.IsNullOrEmpty(paymentReference))
+            {
+                <FluentMessageBar Title="Authentication Error" Intent="@MessageIntent.Success">
+                    Payment successful! Reference: @paymentReference
+                </FluentMessageBar>
+            }
+
+    </FluentStack>
+</FluentEditForm>
+
+</FluentCard>
+
+ 
+
+@code {
+    private RegistrationModel registrationModel = new();
+    private string paymentReference;
+    bool isProcessing = false;
+    private const decimal ConfiguredFee = 5000M; // Example fee
+    private string feeDisplay => $"₦{ConfiguredFee:N0}";
+    private string selectedGenderCode = "";
+    private async Task HandleValidSubmit()
+    {
+        // This method is required by EditForm but payment is handled separately
+    }
+
+    private async Task InitiatePayment()
+    {
+        isProcessing = true;
+        paymentReference = null;
+
+        // TODO: Integrate with Paystack/Flutterwave SDK or API here.
+        // Simulate payment for demonstration
+        await Task.Delay(2000); // Simulate payment processing delay
+
+        // On success, save payment reference
+        paymentReference = Guid.NewGuid().ToString().Substring(0, 10).ToUpper();
+
+        // TODO: Save registrationModel and paymentReference to backend/database
+
+        isProcessing = false;
+    }
+    private void GenderHandler(string gender)
+    {
+        if (!string.IsNullOrEmpty(gender))
+        {
+            this.selectedGenderCode = gender;
+          //  Content.RoleId = selectedRoleId;
+        }
+    }
+    public class RegistrationModel
+    {
+        [Required]
+        public string PupilName { get; set; }
+
+        [Required]
+        [DataType(DataType.Date)]
+        public DateTime? DateOfBirth { get; set; }
+
+        [Required]
+        public string Gender { get; set; }
+
+        [Required]
+        public string ParentName { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string ParentEmail { get; set; }
+
+        [Required]
+        [Phone]
+        public string ParentPhone { get; set; }
+
+        [Required]
+        public string Address { get; set; }
+
+        [Required]
+        public string IntendedClass { get; set; }
+    }
+}

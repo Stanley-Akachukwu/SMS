@@ -69,13 +69,11 @@
 @code {
     [Inject] private IJSRuntime _jSRuntime { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-
+    [Inject] private IUserAuthState _userAuthState { get; set; }
     [Inject] ISmsCoreToastService _toastService { get; set; }
     [Inject] IDialogService _dialogService { get; set; }
     [Inject] private SMSApiClient SMSApiClient { get; set; }
 
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthState { get; set; }
     DataGridRowSize rowSize = DataGridRowSize.Small;
     IQueryable<RoleDto>? roles;
     IQueryable<UserDto>? users;
@@ -105,11 +103,10 @@
             loading = false;
         }
     }
+
     private async Task GetCurrentUser()
     {
-        var authState = await AuthState;
-        var user = authState.User;
-        currentUser = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        currentUser = await _userAuthState.GetCurrentUser();
     }
     private async Task LoadData()
     {
@@ -216,7 +213,6 @@
         var bpFont = new Icons.Regular.Size20.Backpack();
         if (result.Cancelled)
         {
-            _toastService.ShowToastMessage("User Setup", "Successfully cancelled", Color.Warning, ToastIntent.Warning);
             return;
         }
         loading = true;

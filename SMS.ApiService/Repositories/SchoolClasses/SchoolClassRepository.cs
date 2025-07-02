@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SMS.ApiService.Entities.SchoolClasses;
 using SMS.ApiService.Persistence;
 using SMS.Common.Dtos;
 using SMS.Common.Dtos.Schools;
@@ -13,25 +14,28 @@ namespace SMS.ApiService.Repositories.SchoolClasses
             {
                 var classes = await _dbContext.SchoolClasses
                     .Include(sc => sc.School)
-                    .Include(sc => sc.Groups)
+                    .Include(sc => sc.Setting)
                     .Select(sc => new SchoolClassDto
                     {
                         Id = sc.Id,
                         Name = sc.Name,
                         SchoolId = sc.SchoolId,
-                        School = sc.School == null ? null : new SchoolDto
-                        {
-                            Id = sc.School.Id,
-                            Name = sc.School.Name,
-                            Description = sc.School.Description,
-                            SettingId = sc.School.SettingId
-                        },
-                        Groups = sc.Groups.Select(g => new ClassUnitDto
-                        {
-                            Id = g.Id,
-                            Name = g.Name
-                            // Add other ClassUnitDto properties as needed
-                        }).ToList()
+                        Description = sc.Description,
+                        SettingId = sc.SettingId,
+                        SchoolName = sc.School.Name,
+                        //School = sc.School == null ? null : new SchoolDto
+                        //{
+                        //    Id = sc.School.Id,
+                        //    Name = sc.School.Name,
+                        //    Description = sc.School.Description,
+                        //    SettingId = sc.School.SettingId
+                        //},
+                        //Setting = sc.Setting == null ? null : new ClassSettingDto
+                        //{
+                        //    Id = sc.Setting.Id,
+                        //    Name = sc.Setting.Name,
+                        //    Description = sc.Setting.Description
+                        //},  
                     })
                     .ToListAsync(cancellationToken);
 
@@ -81,7 +85,61 @@ namespace SMS.ApiService.Repositories.SchoolClasses
                 return ApiResponse<SchoolClassDto>.Failure(ex.Message, StatusCodes.Status500InternalServerError);
             }
         }
+        public async Task<ApiResponse<string>?> CreateOrUpdateClassAsync(SchoolClassDto dto, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (dto?.School == null)
+                    return ApiResponse<string>.Failure("Bad request.", StatusCodes.Status400BadRequest);
 
+                var schoolClass = await _dbContext.SchoolClasses
+                    .FirstOrDefaultAsync(s => s.Id == dto.Id, cancellationToken);
+
+                string action = "created";
+                int statusCode = StatusCodes.Status201Created;
+                var setting = _dbContext.ClassSettings.FirstOrDefault(s => s.Id == dto.SettingId);
+                if (schoolClass == null)
+                {
+                    action = "created";
+                    statusCode = StatusCodes.Status201Created;
+                    schoolClass = new SchoolClass
+                    {
+                        Id = Ulid.NewUlid().ToString(),
+                        Name = dto.Name,
+                        Description = dto?.Description!,
+                        SettingId = dto?.SettingId,
+                        IsActive = true,
+                        DateCreated = DateTime.UtcNow,
+                        CreatedByUserId = dto?.CreatedByUserId ?? string.Empty,
+                        DateUpdated = DateTime.UtcNow,
+                        UpdatedByUserId = dto.CreatedByUserId ?? string.Empty,
+                        SchoolId = dto.SchoolId,
+                        Setting = setting!,
+                    };
+                    _dbContext.SchoolClasses.Add(schoolClass);
+                }
+                else
+                {
+                    action = "updated";
+                    statusCode = StatusCodes.Status200OK;
+                    schoolClass.Name = dto.Name;
+                    schoolClass.Description = dto?.Description!;
+                    schoolClass.SettingId = dto?.SettingId;
+                    schoolClass.SchoolId = dto.SchoolId;
+                    schoolClass.Setting = setting!;
+                    schoolClass.DateUpdated = DateTime.UtcNow;
+                    schoolClass.UpdatedByUserId = dto?.CreatedByUserId ?? string.Empty;
+                    _dbContext.SchoolClasses.Update(schoolClass);
+                }
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                return ApiResponse<string>.Success($"Successfully {action}", statusCode);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.Failure(ex.Message, StatusCodes.Status500InternalServerError);
+            }
+        }
         public async Task<ApiResponse<SchoolClassDto>?> UpdateSchoolClassAsync(SchoolClassDto dto, CancellationToken cancellationToken)
         {
             try
@@ -148,5 +206,7 @@ namespace SMS.ApiService.Repositories.SchoolClasses
                 return ApiResponse<SchoolClassDto>.Failure(ex.Message, StatusCodes.Status500InternalServerError);
             }
         }
+
+        
     }
 }

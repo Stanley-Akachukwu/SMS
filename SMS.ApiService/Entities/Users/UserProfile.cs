@@ -1,5 +1,4 @@
-﻿using SMS.ApiService.Entities.Departments;
-using SMS.ApiService.Entities.Roles;
+﻿ 
 using System.ComponentModel.DataAnnotations;
 
 namespace SMS.ApiService.Entities.Users

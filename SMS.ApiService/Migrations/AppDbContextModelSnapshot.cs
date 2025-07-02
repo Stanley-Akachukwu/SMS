@@ -345,6 +345,9 @@ namespace SMS.ApiService.Migrations
                     b.Property<string>("SchoolId")
                         .HasColumnType("text");
 
+                    b.Property<string>("SettingId")
+                        .HasColumnType("text");
+
                     b.Property<string>("UpdatedByUserId")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
@@ -352,6 +355,8 @@ namespace SMS.ApiService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SchoolId");
+
+                    b.HasIndex("SettingId");
 
                     b.ToTable("SchoolClasses", "SMS");
                 });
@@ -391,8 +396,8 @@ namespace SMS.ApiService.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("SettingId")
                         .HasColumnType("text");
@@ -495,7 +500,8 @@ namespace SMS.ApiService.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric");
@@ -550,7 +556,8 @@ namespace SMS.ApiService.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("UpdatedByUserId")
                         .HasMaxLength(128)
@@ -613,8 +620,8 @@ namespace SMS.ApiService.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("UpdatedByUserId")
                         .HasMaxLength(128)
@@ -769,6 +776,63 @@ namespace SMS.ApiService.Migrations
                     b.ToTable("UserProfiles", "SMS");
                 });
 
+            modelBuilder.Entity("SMS.ApiService.Entities.Workflows.Workflow", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DateDeleted")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DateUpdated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("RegLink")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("Session")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("WorkflowType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Workflows", "SMS");
+                });
+
             modelBuilder.Entity("SMS.ApiService.Entities.ClassUnits.ClassUnit", b =>
                 {
                     b.HasOne("SMS.ApiService.Entities.SchoolClasses.SchoolClass", "SchoolClass")
@@ -793,7 +857,13 @@ namespace SMS.ApiService.Migrations
                         .WithMany("Classes")
                         .HasForeignKey("SchoolId");
 
+                    b.HasOne("SMS.ApiService.Entities.Settings.ClassSetting", "Setting")
+                        .WithMany()
+                        .HasForeignKey("SettingId");
+
                     b.Navigation("School");
+
+                    b.Navigation("Setting");
                 });
 
             modelBuilder.Entity("SMS.ApiService.Entities.Schools.School", b =>

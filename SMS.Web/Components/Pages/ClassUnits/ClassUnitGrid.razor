@@ -1,10 +1,8 @@
 ﻿@page "/class-units"
 
 
-
-
-
 @using SMS.Common.Dtos.Schools
+@using SMS.Common.Enums
 @using SMS.Web.Components.Shared
 @using SMS.Web.Services.Toasts
 
@@ -24,7 +22,10 @@
         {
             <FluentDataGrid Items="ClassUnits!.AsQueryable()" RowSize="DataGridRowSize.Small" AutoItemsPerPage="true" Style="overflow-y:hidden;">
                 <PropertyColumn Property="@(c => c.Name)" Title="Name" Sortable="true" />
-                <PropertyColumn Property="@(c => c.SchoolClassId)" Title="School Class Id" Sortable="true" />
+                <PropertyColumn Property="@(c => c.CodeName)" Title="Code Name" Sortable="true" />
+                <PropertyColumn Property="@(c => c.Description)" Title="Description" Sortable="true" />
+                <PropertyColumn Property="@(c => c.ClassName!)" Title="School" Sortable="true" />
+                <PropertyColumn Property="@(c => c.Size!)" Title="Size" Sortable="true" />
                 <TemplateColumn Title="Actions">
                     <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditClassUnit(context))" />
                     <FluentButton IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteClassUnit(context))" />
@@ -36,15 +37,30 @@
 
 @code {
     [Inject] private SMSApiClient SMSApiClient { get; set; }
-    [Inject] private ISmsCoreToastService ToastService { get; set; }
-    [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private NavigationManager _navigation { get; set; }
+    [Inject] ISmsCoreToastService _toastService { get; set; }
+    [Inject] IDialogService _dialogService { get; set; }
+    [Inject] private IUserAuthState _userAuthState { get; set; }
 
-    private List<ClassUnitDto>? ClassUnits;
+    private List<SchoolClassDto>? classes;
     private bool loading = false;
-
+    public SMSCoreAction Action { get; set; }
+    string currentUser = string.Empty;
+    private List<ClassUnitDto>? ClassUnits;
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
+        try
+        {
+            loading = true;
+            var loadDataTask = LoadData();
+            var loadClassDataTask = LoadClasses();
+            var getCurrentUserTask = GetCurrentUser();
+            await Task.WhenAll(loadDataTask, getCurrentUserTask, loadClassDataTask);
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private async Task LoadData()
@@ -57,51 +73,111 @@
         }
         else
         {
-            ToastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
         }
         loading = false;
     }
 
+    private async Task GetCurrentUser()
+    {
+        currentUser = await _userAuthState.GetCurrentUser();
+    }
+
     private async Task AddNew()
     {
-        var dialog = await DialogService.ShowPanelAsync<EditClassUnitPanel>(new ClassUnitDto(), new() { Title = "Add Class Unit" });
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        var unit = new ClassUnitDto()
         {
-            await LoadData();
-            ToastService.ShowToastMessage("Class Unit", "Added successfully!", Color.Success, ToastIntent.Success);
-        }
+           Action = SMSCoreAction.Create,
+           Classes = classes,
+        };
+        var dialog = await _dialogService.ShowPanelAsync<EditClassUnitPanel>(unit, new() { Title = "Add Class Unit" });
+        var dialogResult = await dialog.Result;
+        await HandleEditClassUnitDialogResult(dialogResult, unit);
     }
 
-    private async Task EditClassUnit(ClassUnitDto classUnit)
+    private async Task EditClassUnit(ClassUnitDto unit)
     {
-        var dialog = await DialogService.ShowPanelAsync<EditClassUnitPanel>(classUnit, new() { Title = "Edit Class Unit" });
-        var result = await dialog.Result;
-        if (!result.Cancelled)
+        unit.Classes = classes;
+        unit.Action = SMSCoreAction.Edit;
+        var dialog = await _dialogService.ShowPanelAsync<EditClassUnitPanel>(unit, new() { Title = "Edit Class Unit" });
+        var dialogResult = await dialog.Result;
+        await HandleEditClassUnitDialogResult(dialogResult, unit);
+    }
+    private async Task HandleEditClassUnitDialogResult(DialogResult result, ClassUnitDto unit)
+    {
+        if (result.Cancelled)
         {
+            return;
+        }
+        loading = true;
+
+        string message, actionTitle = string.Empty;
+
+        if (unit.Action == SMSCoreAction.Create)
+        {
+            actionTitle = "Class Unit Setup";
+            message = "Unit created successfully!";
+        }
+        else
+        {
+            actionTitle = "Class Unit Update";
+            message = "Unit updated successfully!";
+        }
+        unit.CreatedByUserId = currentUser;
+        classes = new List<SchoolClassDto>();
+
+        var rsp = await SMSApiClient.PostAsync<ApiResponse<string>, ClassUnitDto>("/api/ClassUnits", unit);
+
+        if (rsp?.IsSuccess == true && result.Data != null && rsp?.StatusCode != StatusCodes.Status500InternalServerError)
+        {
+            loading = false;
             await LoadData();
-            ToastService.ShowToastMessage("Class Unit", "Updated successfully!", Color.Success, ToastIntent.Success);
+            await LoadClasses();
+
+            _toastService.ShowToastMessage(actionTitle, message, Color.Success, ToastIntent.Success);
+        }
+        else
+        {
+            loading = false;
+            await LoadData();
+            await LoadClasses();
+            _toastService.ShowToastMessage(actionTitle, rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
         }
     }
-
     private async Task DeleteClassUnit(ClassUnitDto classUnit)
     {
-        var dialog = await DialogService.ShowConfirmationAsync(
+        var dialog = await _dialogService.ShowConfirmationAsync(
             $"Are you sure you want to delete '{classUnit.Name}'?",
             "Yes", "No", "Delete Class Unit?");
         var result = await dialog.Result;
         if (result.Cancelled)
             return;
 
-        var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/classunits/{classUnit.Id}");
-        if (rsp?.IsSuccess == true)
+        _toastService.ShowToastMessage("Error", "Not yet implemented.", Color.Warning, ToastIntent.Warning);
+         
+
+        // var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/classunits/{classUnit.Id}");
+        // if (rsp?.IsSuccess == true)
+        // {
+        //     await LoadData();
+        //     ToastService.ShowToastMessage("Class Unit", "Deleted successfully!", Color.Success, ToastIntent.Success);
+        // }
+        // else
+        // {
+        //     ToastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        // }
+    }
+    private async Task LoadClasses()
+    {
+        var rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<IEnumerable<SchoolClassDto>>>("/api/classes", null);
+        if (rsp?.IsSuccess == true && rsp.Data != null)
         {
-            await LoadData();
-            ToastService.ShowToastMessage("Class Unit", "Deleted successfully!", Color.Success, ToastIntent.Success);
+            classes = rsp.Data.ToList();
         }
         else
         {
-            ToastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+            classes = new List<SchoolClassDto>();
+            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
         }
     }
 }

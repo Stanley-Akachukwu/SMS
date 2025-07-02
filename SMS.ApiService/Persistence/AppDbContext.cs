@@ -8,6 +8,7 @@ using SMS.ApiService.Entities.SchoolClasses;
 using SMS.ApiService.Entities.Schools;
 using SMS.ApiService.Entities.Settings;
 using SMS.ApiService.Entities.Users;
+using SMS.ApiService.Entities.Workflows;
 
 namespace SMS.ApiService.Persistence
 {
@@ -27,6 +28,7 @@ namespace SMS.ApiService.Persistence
         public DbSet<School> Schools { get; set; }
         public DbSet<SchoolClass> SchoolClasses { get; set; }
         public DbSet<ClassUnit> ClassUnits { get; set; }
+        public DbSet<Workflow> Workflows { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

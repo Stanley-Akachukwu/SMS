@@ -8,13 +8,18 @@ namespace SMS.ApiService.Controllers.SchoolClasses
     [ApiController]
     public class ClassesController(ISchoolClassRepository _repository) : ControllerBase
     {
-        [HttpGet("all")]
+        [HttpGet]
         public async Task<ActionResult> GetSchoolClassesAsync(CancellationToken cancellationToken)
         {
             var result = await _repository.GetSchoolClassesAsync(cancellationToken);
             return Ok(result);
         }
-
+        [HttpPost]
+        public async Task<ActionResult> CreateOrUpdateSchoolsAsync([FromBody] SchoolClassDto dto, CancellationToken cancellationToken)
+        {
+            var result = await _repository.CreateOrUpdateClassAsync(dto, cancellationToken);
+            return Ok(result);
+        }
         [HttpGet("{id}")]
         public async Task<ActionResult> GetSchoolClassByIdAsync(string id, CancellationToken cancellationToken)
         {

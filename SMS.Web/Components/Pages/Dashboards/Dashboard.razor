@@ -46,13 +46,11 @@
 @code {
     [Inject] private SMSApiClient SMSApiClient { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthState { get; set; }
+    [Inject] private IUserAuthState _userAuthState { get; set; }
 
     bool loading = false;
     private List<DashboardItemDto> dashboardItems = new();
-    ClaimsPrincipal? currentUser = null;
-    private string userId = string.Empty;
+    string currentUser = string.Empty;
     private object GetIcon(string set, string name, string size)
     {
         try
@@ -64,30 +62,25 @@
         }
         catch
         {
-            return null; // fallback or log error
+            return null;  
         }
     }
     protected override async Task OnInitializedAsync()
     {
         loading = true;
-
-        var authState = await AuthState;
-        currentUser = authState.User;
-        userId = currentUser?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        if (currentUser.Identity == null || !currentUser.Identity.IsAuthenticated)
-        {
-            _navigation.NavigateTo("/login/dashboard");
-        }
+        
         try
         {
-            if (currentUser.Identity != null && currentUser.Identity.IsAuthenticated)
+            if (!await _userAuthState.IsAuthenticated())
+            {
+                _navigation.NavigateTo("/login/dashboard");
+            }
+
+            if (await _userAuthState.IsAuthenticated())
             {
                 var loadDashboardTask = LoadData();
-                // var getDepartmentTask = GetDepartments();
-                // var getRolesTask = LoadRoles();
-
-
-                await Task.WhenAll(loadDashboardTask);
+                var getCurrentUserTask = GetCurrentUser();
+                await Task.WhenAll(loadDashboardTask, getCurrentUserTask);
             }
 
         }
@@ -96,13 +89,16 @@
             loading = false;
         }
     }
-
+    private async Task GetCurrentUser()
+    {
+        currentUser = await _userAuthState.GetCurrentUser();
+    }
     private async Task LoadData(string? department = "all")
     {
         var rsp = new ApiResponse<List<DashboardItemDto>>();
         try
         {
-            rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<List<DashboardItemDto>>>($"/api/dashboards/{department}", userId);
+            rsp = await SMSApiClient.GetFromJsonAsync<ApiResponse<List<DashboardItemDto>>>($"/api/dashboards/{department}", currentUser);
             if (rsp?.StatusCode == 401)
             {
                 _navigation.NavigateTo($"/login/dashboard");

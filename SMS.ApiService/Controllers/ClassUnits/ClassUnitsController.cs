@@ -14,7 +14,14 @@ namespace SMS.ApiService.Controllers.ClassUnits
             var result = await _repository.GetClassUnitsAsync(cancellationToken);
             return Ok(result);
         }
-
+        [HttpPost]
+        public async Task<ActionResult> CreateOrUpdateClassUnitAsync([FromBody] ClassUnitDto dto, CancellationToken cancellationToken)
+        {
+            var result = await _repository.CreateOrUpdateClassUnitAsync(dto, cancellationToken);
+            if (result == null || !result.IsSuccess)
+                return NotFound(result);
+            return Ok(result);
+        }
         [HttpGet("{id}")]
         public async Task<ActionResult> GetClassUnitByIdAsync(string id, CancellationToken cancellationToken)
         {

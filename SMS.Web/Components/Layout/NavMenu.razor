@@ -104,9 +104,8 @@
                     IconColor = Color.Accent
                 } 
             }
-        },
-       
-          new MenuGroupDto
+        },       
+        new MenuGroupDto
         {
             Section = MenuSection.Setups,
             DisplayTitle = "Setups",
@@ -170,7 +169,38 @@
 
             }
         },
-        
+        new MenuGroupDto
+        {
+            Section = MenuSection.Workflows,
+            DisplayTitle = "Workflows",
+            Tooltip = "SMS Workflows",
+            Icon = new Icons.Color.Size16.DocumentFolder(),
+            Items = new List<MenuItemDto>
+            {
+                new MenuItemDto
+                {
+                    Title = "Entrance",
+                    Href = "entrance-workflows",
+                    Icon = new Icons.Regular.Size20.DocumentAdd(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Staffing",
+                    Href = "staffing-workflows",
+                    Icon = new Icons.Regular.Size20.PersonLock(),
+                    IconColor = Color.Accent
+                },
+                new MenuItemDto
+                {
+                    Title = "Result Computation",
+                    Href = "result-computation-workflows",
+                    Icon = new Icons.Regular.Size20.PersonLock(),
+                    IconColor = Color.Accent
+                }
+
+            }
+        },
         new MenuGroupDto
         {
             Section = MenuSection.Academic,

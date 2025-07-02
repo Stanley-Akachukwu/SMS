@@ -11,9 +11,14 @@ namespace SMS.ApiService.Repositories.Roles
 {
     public class RoleRepository(AppDbContext _dbContext) : IRoleRepository
     {
-        private ApiResponse<string> CopyFromExistingRole(string? copyFromRoleId, CancellationToken cancellationToken)
+        private ApiResponse<string> TryCopyFromExistingRole(string? copyFromRoleId, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return new ApiResponse<string>
+            {
+                IsSuccess = false,
+                ErrorMessage = "Copying from existing role is not implemented yet.",
+                StatusCode = StatusCodes.Status501NotImplemented
+            };
         }
         private RolePermission MapToRolePermission(PermissionConfig permission, string roleId, string? createdBy) =>
             new()
@@ -35,7 +40,7 @@ namespace SMS.ApiService.Repositories.Roles
             var copyPermission = role.CopyPermissions;
             if(copyPermission != null)
                 if (copyPermission.AllowedCopy == true && !string.IsNullOrEmpty(copyPermission?.CopyFromRoleId))
-                    return CopyFromExistingRole(copyPermission?.CopyFromRoleId, cancellationToken);
+                    return TryCopyFromExistingRole(copyPermission?.CopyFromRoleId, cancellationToken);
 
 
             string action = "created";

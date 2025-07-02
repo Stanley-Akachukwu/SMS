@@ -22,8 +22,7 @@
         {
             <FluentDataGrid Items="Schools!.AsQueryable()" RowSize="DataGridRowSize.Small" AutoItemsPerPage="true" Style="overflow-y:hidden;">
                 <PropertyColumn Property="@(c => c.Name)" Title="Name" Sortable="true" />
-                <PropertyColumn Property="@(c => c.Description)" Title="Description" Sortable="true" />
-                @*  <PropertyColumn Property="@(c => c.Setting.Name)" Title="Setting Name" Sortable="true" /> *@
+                <PropertyColumn Property="@(c => c.Description)" Title="Description" Sortable="true" />                
                 <TemplateColumn Title="Actions">
                     <FluentButton IconStart="@(new Icons.Regular.Size16.Edit())" OnClick="@(() => EditSchool(context))" />
                     <FluentButton IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="@(() => DeleteSchool(context))" />
@@ -35,15 +34,12 @@
 
 @code {
     [Inject] private SMSApiClient SMSApiClient { get; set; }
-
+    [Inject] private IUserAuthState _userAuthState { get; set; }
     [Inject] private IJSRuntime _jSRuntime { get; set; }
     [Inject] private NavigationManager _navigation { get; set; }
-
     [Inject] ISmsCoreToastService _toastService { get; set; }
     [Inject] IDialogService _dialogService { get; set; }
-
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthState { get; set; }
+     
 
     private List<SchoolDto>? Schools;
     public SMSCoreAction Action { get; set; }
@@ -69,9 +65,7 @@
     }
     private async Task GetCurrentUser()
     {
-        var authState = await AuthState;
-        var user = authState.User;
-        currentUser = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        currentUser = await _userAuthState.GetCurrentUser();
     }
     private async Task LoadData()
     {
@@ -125,7 +119,6 @@
     {
         if (result.Cancelled)
         {
-            _toastService.ShowToastMessage("School Setup", "Successfully cancelled", Color.Warning, ToastIntent.Warning);
             return;
         }
         loading = true;
@@ -169,15 +162,16 @@
         if (result.Cancelled)
             return;
 
-        var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/school/{school.Id}");
-        if (rsp?.IsSuccess == true)
-        {
-            await LoadData();
-            _toastService.ShowToastMessage("School", "Deleted successfully!", Color.Success, ToastIntent.Success);
-        }
-        else
-        {
-            _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
-        }
+        _toastService.ShowToastMessage("Error", "Not yet implemented.", Color.Warning, ToastIntent.Warning);
+        // var rsp = await SMSApiClient.DeleteAsync<ApiResponse<string>>($"/api/school/{school.Id}");
+        // if (rsp?.IsSuccess == true)
+        // {
+        //     await LoadData();
+        //     _toastService.ShowToastMessage("School", "Deleted successfully!", Color.Success, ToastIntent.Success);
+        // }
+        // else
+        // {
+        //     _toastService.ShowToastMessage("Error", rsp?.ErrorMessage, Color.Error, ToastIntent.Error);
+        // }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SMS.ApiService.Repositories.Schools;
 using SMS.Common.Dtos.Schools;
-using SMS.Common.Dtos.Users;
 
 namespace SMS.ApiService.Controllers.Schools
 {

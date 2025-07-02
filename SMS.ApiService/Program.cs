@@ -11,6 +11,7 @@ using SMS.ApiService.Repositories.SchoolClasses;
 using SMS.ApiService.Repositories.Schools;
 using SMS.ApiService.Repositories.Settings;
 using SMS.ApiService.Repositories.Users;
+using SMS.ApiService.Repositories.Workflows;
 using SMS.Common.Authorization;
 using SMS.Common.Enums;
 using System.Text;
@@ -59,6 +60,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
     builder.Services.AddScoped<ISchoolClassRepository, SchoolClassRepository>();
     builder.Services.AddScoped<IClassUnitRepository, ClassUnitRepository>();
+    builder.Services.AddScoped<IWorkflowRepository, WorkflowRepository>();
 
 
 

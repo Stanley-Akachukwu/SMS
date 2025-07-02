@@ -9,5 +9,7 @@ namespace SMS.ApiService.Repositories.ClassUnits
         Task<ApiResponse<ClassUnitDto>?> GetClassUnitByIdAsync(string id, CancellationToken cancellationToken);
         Task<ApiResponse<ClassUnitDto>?> UpdateClassUnitAsync(ClassUnitDto dto, CancellationToken cancellationToken);
         Task<ApiResponse<ClassUnitDto>?> DeleteClassUnitAsync(string id, CancellationToken cancellationToken);
+        Task<ApiResponse<string>?> CreateOrUpdateClassUnitAsync(ClassUnitDto dto, CancellationToken cancellationToken);
+
     }
 }

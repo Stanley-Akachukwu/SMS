@@ -17,11 +17,28 @@ builder.AddRedisOutputCache("cache");
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+
+//builder.Services.AddHttpClient<SMSApiClient>(client =>
+//{
+//    client.BaseAddress = new(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "https+http://localhost:7386");
+//});
+
+//builder.Services.AddHttpClient<SMSApiClient>(client =>
+//{
+//    client.BaseAddress = new(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "https+http://apiservice");
+//});
+
+
+builder.Services.AddHttpClient<SMSApiClient>(client =>
+{
+    client.BaseAddress = new("https+http://apiservice");
+});
+
 builder.Services.AddFluentUIComponents();
 
 builder.Services.AddServerSideBlazor()
     .AddCircuitOptions(options => { options.DetailedErrors = true; });
-
+builder.Services.AddScoped<IUserAuthState, UserAuthState>();
 
 builder.Services.AddAuthenticationCore();
 builder.Services.AddCascadingAuthenticationState();
@@ -31,10 +48,7 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>
 builder.Services.AddScoped<ISmsCoreToastService, SmsCoreToastService>();
 builder.Services.AddSingleton<IPermissionService, PermissionService>();
 
-builder.Services.AddHttpClient<SMSApiClient>(client =>
-{
-    client.BaseAddress = new(Environment.GetEnvironmentVariable("API_BASE_URL") ?? "https+http://localhost:7386");
-});
+
 
 // Add localization services
 builder.Services.AddLocalization();
